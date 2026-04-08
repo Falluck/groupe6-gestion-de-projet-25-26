@@ -1,43 +1,27 @@
-class ServoMotor:
-    """
-    Représentation d'un servomoteur de direction.
-    Attributs:
-        __boardChannel (int): Canal sur le driver PCA9685.
-        __rangeDegrees (int): Amplitude maximale de rotation en degrés.
-        __centerAngle (int): Angle central du servo (position neutre).
-        __frequency (int): Fréquence PWM en Hz.
-        __minPulse (float): Largeur d'impulsion minimale en ms.
-        __maxPulse (float): Largeur d'impulsion maximale en ms.
-    """
+from DCMotor import DCMotor
+from ServoMotor import ServoMotor
+import adafruit_pca9685
+import busio
 
-    def __init__(self, boardChannel: int, rangeDegrees: int):
-        self.__boardChannel = boardChannel
-        self.__rangeDegrees = rangeDegrees
-        self.__centerAngle = 80
-        self.__frequency = 50
-        self.__minPulse = 1.0
-        self.__maxPulse = 2.0
 
-    @property
-    def boardChannel(self) -> int:
-        return self.__boardChannel
+class MotorManager:
+    """Gestionnaire des moteurs du véhicule."""
 
-    @property
-    def rangeDegrees(self) -> float:
-        return self.__rangeDegrees
+    def __init__(self, i2c_bus: busio.I2C):
+        self.__dcMotorsPropulsion = [DCMotor(5, 17, 18), DCMotor(4, 27, 22)]
+        self.__servoDirection = ServoMotor(0, 50)
+        self.__pwmDriver = adafruit_pca9685.PCA9685(i2c_bus, address=0x40)
+        self.__pwmDriver.frequency = 50
 
-    @property
-    def centerAngle(self) -> float:
-        return self.__centerAngle
+    def setSpeed(self, speed: float) -> None:
+        """Définit la vitesse des moteurs DC (-100 à 100)."""
+        pass
 
-    @property
-    def frequency(self) -> float:
-        return self.__frequency
+    def setAngle(self, steering: float) -> None:
+        """Définit l'angle de braquage du servomoteur (-100 à 100)."""
+        pass
 
-    @property
-    def minPulse(self) -> float:
-        return self.__minPulse
-
-    @property
-    def maxPulse(self) -> float:
-        return self.__maxPulse
+    def convert_steering_to_duty(self, steering: float) -> int:
+        """Convertit un pourcentage de braquage en duty_cycle 16 bits.
+        Interpolation linéaire entre minDuty (6%) et maxDuty (10%)."""
+        pass
