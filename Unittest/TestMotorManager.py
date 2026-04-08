@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 import sys
 import os
 
-# Mock toutes les dépendances hardware
 mock_gpio = MagicMock()
 mock_gpio.BCM = 11
 mock_gpio.OUT = 0
@@ -66,15 +65,13 @@ class TestMotorManager(unittest.TestCase):
     def test_convert_steering_to_duty_existe_et_appelable(self):
         """Vérifie que convert_steering_to_duty existe et peut être appelée."""
         result = self.manager.convert_steering_to_duty(0)
-        # Méthode en pass → retourne None
         self.assertIsNone(result)
 
-    def test_servo_properties_accessibles(self):
-        """Vérifie que les properties du servo interne sont accessibles."""
+    def test_servo_properties_duty(self):
+        """Vérifie que minDuty et maxDuty du servo sont accessibles."""
         servo = self.manager._MotorManager__servoDirection
-        self.assertEqual(servo.minPulse, 1.0)
-        self.assertEqual(servo.maxPulse, 2.0)
-        self.assertEqual(servo.centerAngle, 80)
+        self.assertEqual(servo.minDuty, 6.0)
+        self.assertEqual(servo.maxDuty, 10.0)
 
     def test_deux_moteurs_dc_crees(self):
         """Vérifie que 2 moteurs DC sont créés."""

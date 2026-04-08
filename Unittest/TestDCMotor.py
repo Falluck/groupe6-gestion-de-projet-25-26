@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 import sys
 import os
 
-# Mock RPi.GPIO avant l'import
 mock_gpio_module = MagicMock()
 mock_gpio_module.BCM = 11
 mock_gpio_module.OUT = 0

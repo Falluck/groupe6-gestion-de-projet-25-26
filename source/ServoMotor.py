@@ -6,8 +6,8 @@ class ServoMotor:
         self.__rangeDegrees = rangeDegrees
         self.__centerAngle = 80
         self.__frequency = 50
-        self.__minPulse = 1.0
-        self.__maxPulse = 2.0
+        self.__minDuty = 6.0    
+        self.__maxDuty = 10.0   
 
     @property
     def boardChannel(self) -> int:
@@ -26,9 +26,9 @@ class ServoMotor:
         return self.__frequency
 
     @property
-    def minPulse(self) -> float:
-        return self.__minPulse
+    def minDuty(self) -> float:
+        return self.__minDuty
 
     @property
-    def maxPulse(self) -> float:
-        return self.__maxPulse
+    def maxDuty(self) -> float:
+        return self.__maxDuty

@@ -20,10 +20,10 @@ class TestServoMotor(unittest.TestCase):
         self.assertEqual(self.servo.centerAngle, 80)
         self.assertEqual(self.servo.frequency, 50)
 
-    def test_proprietes_pulse(self):
-        """Vérifie minPulse et maxPulse."""
-        self.assertEqual(self.servo.minPulse, 1.0)
-        self.assertEqual(self.servo.maxPulse, 2.0)
+    def test_proprietes_duty(self):
+        """Vérifie minDuty (6%) et maxDuty (10%)."""
+        self.assertEqual(self.servo.minDuty, 6.0)
+        self.assertEqual(self.servo.maxDuty, 10.0)
 
     def test_creation_autres_valeurs(self):
         """Vérifie la création avec des paramètres différents."""
@@ -42,9 +42,9 @@ class TestServoMotor(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.servo.frequency = 60
         with self.assertRaises(AttributeError):
-            self.servo.minPulse = 0.5
+            self.servo.minDuty = 5.0
         with self.assertRaises(AttributeError):
-            self.servo.maxPulse = 3.0
+            self.servo.maxDuty = 12.0
 
 
 if __name__ == '__main__':

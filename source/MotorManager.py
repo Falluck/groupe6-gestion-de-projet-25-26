@@ -22,5 +22,6 @@ class MotorManager:
         pass
 
     def convert_steering_to_duty(self, steering: float) -> int:
-        """Convertit un pourcentage de braquage en duty_cycle 16 bits."""
+        """Convertit un pourcentage de braquage en duty_cycle 16 bits.
+        Interpolation linéaire entre minDuty (6%) et maxDuty (10%)."""
         pass
