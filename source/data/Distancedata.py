@@ -1,5 +1,7 @@
 class DistanceData:
-    """Classe de données pour stocker les distances mesurées."""
+    """
+    Classe de données pour stocker les distances mesurées.  
+    """
 
     def __init__(self, front: float, left: float, right: float):
         self.__front = front
