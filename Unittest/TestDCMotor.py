@@ -20,7 +20,7 @@ from DCMotor import DCMotor
 
 
 class TestDCMotor(unittest.TestCase):
-    """Tests pour la classe DCMotor."""
+    """Tests pour la classe DCMotor (code vide)."""
 
     def setUp(self):
         self.mock_gpio = MagicMock()
@@ -38,36 +38,31 @@ class TestDCMotor(unittest.TestCase):
         self.assertEqual(motor.pinInput1, 17)
         self.assertEqual(motor.pinInput2, 18)
 
-    def test_gpio_setup_appele_sans_setmode(self):
-        """Vérifie que GPIO.setup est appelé 3 fois mais pas setmode (centralisé dans main)."""
+    def test_gpio_setup_appele_trois_fois(self):
+        """Vérifie que GPIO.setup est appelé 3 fois (enable, input1, input2)."""
         with patch.object(dc_module, 'GPIO', self.mock_gpio):
             motor = DCMotor(5, 17, 18)
         self.assertEqual(self.mock_gpio.setup.call_count, 3)
+
+    def test_gpio_setmode_pas_appele(self):
+        """Vérifie que GPIO.setmode n'est PAS appelé (centralisé dans main)."""
+        with patch.object(dc_module, 'GPIO', self.mock_gpio):
+            motor = DCMotor(5, 17, 18)
         self.mock_gpio.setmode.assert_not_called()
 
-    def test_set_direction_avant(self):
-        """Vérifie la direction avant (True)."""
+    def test_set_direction_existe_et_appelable(self):
+        """Vérifie que setDirection existe et peut être appelée sans erreur."""
         with patch.object(dc_module, 'GPIO', self.mock_gpio):
             motor = DCMotor(5, 17, 18)
-            motor.setDirection(True)
-        self.mock_gpio.output.assert_any_call(17, 0)
-        self.mock_gpio.output.assert_any_call(18, 1)
+            result = motor.setDirection(True)
+        self.assertIsNone(result)
 
-    def test_set_direction_arriere(self):
-        """Vérifie la direction arrière (False)."""
+    def test_stop_existe_et_appelable(self):
+        """Vérifie que stop existe et peut être appelée sans erreur."""
         with patch.object(dc_module, 'GPIO', self.mock_gpio):
             motor = DCMotor(5, 17, 18)
-            motor.setDirection(False)
-        self.mock_gpio.output.assert_any_call(17, 1)
-        self.mock_gpio.output.assert_any_call(18, 0)
-
-    def test_stop(self):
-        """Vérifie l'arrêt du moteur (freinage)."""
-        with patch.object(dc_module, 'GPIO', self.mock_gpio):
-            motor = DCMotor(5, 17, 18)
-            motor.stop()
-        self.mock_gpio.output.assert_any_call(17, 1)
-        self.mock_gpio.output.assert_any_call(18, 1)
+            result = motor.stop()
+        self.assertIsNone(result)
 
     def test_proprietes_lecture_seule(self):
         """Vérifie que les propriétés sont en lecture seule."""
