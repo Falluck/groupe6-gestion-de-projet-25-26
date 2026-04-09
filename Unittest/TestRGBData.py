@@ -41,6 +41,46 @@ class TestRGBData(unittest.TestCase):
         with self.assertRaises(AttributeError):
             data.blue = 0
 
+    def test_creation_red_negatif(self):
+        """Vérifie que red négatif lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData(-1, 100, 100)
+
+    def test_creation_green_negatif(self):
+        """Vérifie que green négatif lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData(100, -1, 100)
+
+    def test_creation_blue_negatif(self):
+        """Vérifie que blue négatif lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData(100, 100, -1)
+
+    def test_creation_red_trop_grand(self):
+        """Vérifie que red > 255 lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData(256, 100, 100)
+
+    def test_creation_green_trop_grand(self):
+        """Vérifie que green > 255 lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData(100, 256, 100)
+
+    def test_creation_blue_trop_grand(self):
+        """Vérifie que blue > 255 lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData(100, 100, 256)
+
+    def test_creation_red_string(self):
+        """Vérifie que red string lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData("rouge", 100, 100)
+
+    def test_creation_red_none(self):
+        """Vérifie que red None lève ValueError."""
+        with self.assertRaises(ValueError):
+            RGBData(None, 100, 100)
+
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
