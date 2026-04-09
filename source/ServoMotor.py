@@ -1,27 +1,34 @@
-from DCMotor import DCMotor
-from ServoMotor import ServoMotor
-import adafruit_pca9685
-import busio
+class ServoMotor:
+    """Représentation d'un servomoteur de direction."""
 
+    def __init__(self, boardChannel: int, rangeDegrees: int):
+        self.__boardChannel = boardChannel
+        self.__rangeDegrees = rangeDegrees
+        self.__centerAngle = 80
+        self.__frequency = 50
+        self.__minDuty = 6.0    # 6% → butée gauche
+        self.__maxDuty = 10.0   # 10% → butée droite
 
-class MotorManager:
-    """Gestionnaire des moteurs du véhicule."""
+    @property
+    def boardChannel(self) -> int:
+        return self.__boardChannel
 
-    def __init__(self, i2c_bus: busio.I2C):
-        self.__dcMotorsPropulsion = [DCMotor(5, 17, 18), DCMotor(4, 27, 22)]
-        self.__servoDirection = ServoMotor(0, 50)
-        self.__pwmDriver = adafruit_pca9685.PCA9685(i2c_bus, address=0x40)
-        self.__pwmDriver.frequency = 50
+    @property
+    def rangeDegrees(self) -> float:
+        return self.__rangeDegrees
 
-    def setSpeed(self, speed: float) -> None:
-        """Définit la vitesse des moteurs DC (-100 à 100)."""
-        pass
+    @property
+    def centerAngle(self) -> float:
+        return self.__centerAngle
 
-    def setAngle(self, steering: float) -> None:
-        """Définit l'angle de braquage du servomoteur (-100 à 100)."""
-        pass
+    @property
+    def frequency(self) -> float:
+        return self.__frequency
 
-    def convert_steering_to_duty(self, steering: float) -> int:
-        """Convertit un pourcentage de braquage en duty_cycle 16 bits.
-        Interpolation linéaire entre minDuty (6%) et maxDuty (10%)."""
-        pass
+    @property
+    def minDuty(self) -> float:
+        return self.__minDuty
+
+    @property
+    def maxDuty(self) -> float:
+        return self.__maxDuty
