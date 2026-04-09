@@ -12,6 +12,13 @@ class DCMotor:
     """
 
     def __init__(self, enable: int, input1: int, input2: int):
+        if not isinstance(enable, int) or enable < 0:
+            raise ValueError("enable doit être un entier positif ou nul.")
+        if not isinstance(input1, int) or input1 < 0:
+            raise ValueError("input1 doit être un entier positif ou nul.")
+        if not isinstance(input2, int) or input2 < 0:
+            raise ValueError("input2 doit être un entier positif ou nul.")
+
         self.__pinEnable = enable
         self.__pinInput1 = input1
         self.__pinInput2 = input2
@@ -38,6 +45,9 @@ class DCMotor:
         Args:
             direction (bool): True = marche avant, False = marche arrière.
         """
+        if not isinstance(direction, bool):
+            raise TypeError("direction doit être un booléen.")
+
         if direction:
             GPIO.output(self.__pinInput1, GPIO.LOW)
             GPIO.output(self.__pinInput2, GPIO.HIGH)
