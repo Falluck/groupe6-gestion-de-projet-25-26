@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 import sys
 import os
 
-
 sys.modules['RPi'] = MagicMock()
 sys.modules['RPi.GPIO'] = MagicMock()
 sys.modules['busio'] = MagicMock()
@@ -14,9 +13,12 @@ sys.modules['adafruit_pca9685'] = MagicMock()
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'source'))
 
+from data.DistanceData import DistanceData
+from data.RGBData import RGBData
+
 
 class TestCar(unittest.TestCase):
-    """Tests pour la classe Car (code vide)."""
+    """Tests pour la classe Car."""
 
     def setUp(self):
         from Car import Car
@@ -29,58 +31,91 @@ class TestCar(unittest.TestCase):
         self.car._Car__motorManager = self.mock_motor
         self.car._Car__sensorManager = self.mock_sensor
 
-    def test_creation_sans_erreur(self):
-        """Vérifie que Car peut être instancié."""
-        self.assertIsNotNone(self.car)
+    @patch('Car.time')
+    def test_prepare_motors_teste_avant_arriere_et_servo(self, mock_time):
+        """Vérifie que prepareMotors teste les DC (avant/arrière) et le servo."""
+        self.car.prepareMotors()
+        vitesses = [c[0][0] for c in self.mock_motor.setSpeed.call_args_list]
+        self.assertTrue(any(v > 0 for v in vitesses))
+        self.assertTrue(any(v < 0 for v in vitesses))
+        self.assertIn(0, vitesses)
+        self.assertTrue(self.mock_motor.setAngle.called)
+
+    def test_prepare_sensors_tous_ok(self):
+        """Vérifie que prepareSensors retourne True quand tout fonctionne."""
+        mock_rgb = MagicMock()
+        mock_rgb.readValue.return_value = RGBData(100, 200, 50)
+        self.mock_sensor._SensorManager__rgbSensor = mock_rgb
+        self.mock_sensor.getCurrent.return_value = 250.0
+        self.mock_sensor.getDistance.return_value = DistanceData(30.0, 20.0, 25.0)
+        self.mock_sensor.detectLine.return_value = False
+        self.assertTrue(self.car.prepareSensors())
+
+    def test_prepare_sensors_retourne_false_si_rgb_echoue(self):
+        """Vérifie que prepareSensors retourne False si le capteur RGB échoue."""
+        mock_rgb = MagicMock()
+        mock_rgb.readValue.side_effect = Exception("Déconnecté")
+        self.mock_sensor._SensorManager__rgbSensor = mock_rgb
+        self.mock_sensor.getCurrent.return_value = 250.0
+        self.mock_sensor.getDistance.return_value = DistanceData(30.0, 20.0, 25.0)
+        self.mock_sensor.detectLine.return_value = False
+        self.assertFalse(self.car.prepareSensors())
+
+    def test_prepare_sensors_retourne_false_si_ina_echoue(self):
+        """Vérifie que prepareSensors retourne False si INA219 retourne None."""
+        mock_rgb = MagicMock()
+        mock_rgb.readValue.return_value = RGBData(100, 200, 50)
+        self.mock_sensor._SensorManager__rgbSensor = mock_rgb
+        self.mock_sensor.getCurrent.return_value = None
+        self.mock_sensor.getDistance.return_value = DistanceData(30.0, 20.0, 25.0)
+        self.mock_sensor.detectLine.return_value = False
+        self.assertFalse(self.car.prepareSensors())
+
+    def test_prepare_sensors_retourne_false_si_distance_echoue(self):
+        """Vérifie que prepareSensors retourne False si getDistance retourne None."""
+        mock_rgb = MagicMock()
+        mock_rgb.readValue.return_value = RGBData(100, 200, 50)
+        self.mock_sensor._SensorManager__rgbSensor = mock_rgb
+        self.mock_sensor.getCurrent.return_value = 250.0
+        self.mock_sensor.getDistance.return_value = None
+        self.mock_sensor.detectLine.return_value = False
+        self.assertFalse(self.car.prepareSensors())
+
+    def test_prepare_sensors_retourne_false_si_ligne_echoue(self):
+        """Vérifie que prepareSensors retourne False si detectLine lève une exception."""
+        mock_rgb = MagicMock()
+        mock_rgb.readValue.return_value = RGBData(100, 200, 50)
+        self.mock_sensor._SensorManager__rgbSensor = mock_rgb
+        self.mock_sensor.getCurrent.return_value = 250.0
+        self.mock_sensor.getDistance.return_value = DistanceData(30.0, 20.0, 25.0)
+        self.mock_sensor.detectLine.side_effect = Exception("Erreur ligne")
+        self.assertFalse(self.car.prepareSensors())
 
     def test_logger_initialise(self):
         """Vérifie que le logger est initialisé."""
         import logging
         self.assertIsInstance(self.car.logger, logging.Logger)
 
-    def test_prepare_motors_existe_et_appelable(self):
-        """Vérifie que prepareMotors existe et peut être appelée."""
-        result = self.car.prepareMotors()
+    @patch('Car.time')
+    def test_uturn_ecrit_dans_les_logs(self, mock_time):
+        """Vérifie que uTurn produit des entrées dans les logs."""
+        with patch.object(self.car.logger, 'info') as mock_log:
+            self.car.uTurn()
+            msgs = [c[0][0] for c in mock_log.call_args_list]
+            self.assertTrue(any("demi-tour" in m.lower() for m in msgs))
 
-        self.assertIsNone(result)
+    @patch('Car.time')
+    def test_uturn_termine_vitesse_a_zero(self, mock_time):
+        """Vérifie que uTurn remet la vitesse à 0 à la fin."""
+        self.car.uTurn()
+        last = self.mock_motor.setSpeed.call_args_list[-1]
+        self.assertEqual(last[0][0], 0)
 
-    def test_prepare_sensors_existe_et_appelable(self):
-        """Vérifie que prepareSensors existe et peut être appelée."""
-        result = self.car.prepareSensors()
-        self.assertIsNone(result)
-
-    def test_start_car_existe_et_appelable(self):
-        """Vérifie que startCar existe et peut être appelée."""
-        result = self.car.startCar()
-        self.assertIsNone(result)
-
-    def test_stop_car_existe_et_appelable(self):
-        """Vérifie que stopCar existe et peut être appelée."""
-        result = self.car.stopCar()
-        self.assertIsNone(result)
-
-    def test_u_turn_existe_et_appelable(self):
-        """Vérifie que uTurn existe et peut être appelée."""
-        result = self.car.uTurn()
-        self.assertIsNone(result)
-
-    def test_attributs_internes(self):
-        """Vérifie que les attributs internes sont initialisés."""
-        car = self.Car(self.mock_i2c)
-        self.assertEqual(car._Car__carName, "Car")
-        self.assertEqual(car._Car__tour, -1)
-        self.assertEqual(car._Car__totalLaps, 0)
-        self.assertFalse(car._Car__last_line_state)
-
-    def test_motor_manager_existe(self):
-        """Vérifie que le MotorManager interne est créé."""
-        car = self.Car(self.mock_i2c)
-        self.assertIsNotNone(car._Car__motorManager)
-
-    def test_sensor_manager_existe(self):
-        """Vérifie que le SensorManager interne est créé."""
-        car = self.Car(self.mock_i2c)
-        self.assertIsNotNone(car._Car__sensorManager)
+    def test_stop_car_met_vitesse_et_angle_a_zero(self):
+        """Vérifie que stopCar met vitesse et angle à 0."""
+        self.car.stopCar()
+        self.mock_motor.setSpeed.assert_called_with(0)
+        self.mock_motor.setAngle.assert_called_with(0)
 
 
 if __name__ == '__main__':
