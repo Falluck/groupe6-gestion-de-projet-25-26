@@ -94,7 +94,6 @@ class TestMotorManager(unittest.TestCase):
         """Vérifie que setAngle(200) ne crashe pas mais ne bouge pas le servo."""
         self.mock_pwm.reset_mock()
         self.manager.setAngle(200)
-        self.mock_pwm.channels.__getitem__().duty_cycle.__set__ = MagicMock()
 
     def test_set_angle_hors_plage_negatif(self):
         """Vérifie que setAngle(-200) ne crashe pas mais ne bouge pas le servo."""
@@ -119,8 +118,13 @@ class TestMotorManager(unittest.TestCase):
         expected = int(0.10 * 65535)
         self.assertEqual(result, expected)
 
-    def test_servo_properties_duty(self):
-        """Vérifie que minDuty et maxDuty du servo sont accessibles."""
+    def test_servo_channel(self):
+        """Vérifie que le servo est sur le canal 0."""
+        servo = self.manager._MotorManager__servoDirection
+        self.assertEqual(servo.boardChannel, 0)
+
+    def test_servo_duty_values(self):
+        """Vérifie que minDuty et maxDuty du servo sont corrects."""
         servo = self.manager._MotorManager__servoDirection
         self.assertEqual(servo.minDuty, 6.0)
         self.assertEqual(servo.maxDuty, 10.0)
