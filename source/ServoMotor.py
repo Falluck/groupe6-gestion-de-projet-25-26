@@ -1,13 +1,23 @@
 class ServoMotor:
-    """Représentation d'un servomoteur de direction."""
+    """
+    Représentation d'un servomoteur de direction.
+
+    Attributs:
+        __boardChannel (int): Canal sur le driver PCA9685.
+        __rangeDegrees (int): Amplitude maximale de rotation en degrés.
+        __centerAngle (int): Angle central du servo (position neutre).
+        __frequency (int): Fréquence PWM en Hz.
+        __minDuty (float): Rapport cyclique (%) à l'angle max gauche.
+        __maxDuty (float): Rapport cyclique (%) à l'angle max droite.
+    """
 
     def __init__(self, boardChannel: int, rangeDegrees: int):
         self.__boardChannel = boardChannel
         self.__rangeDegrees = rangeDegrees
         self.__centerAngle = 80
         self.__frequency = 50
-        self.__minDuty = 6.0    # 6% → butée gauche
-        self.__maxDuty = 10.0   # 10% → butée droite
+        self.__minDuty = 6.0
+        self.__maxDuty = 10.0
 
     @property
     def boardChannel(self) -> int:
