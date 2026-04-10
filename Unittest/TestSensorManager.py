@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'source'))
 
 from data.DistanceData import DistanceData
 from data.RGBData import RGBData
+from SensorManager import SensorManager
 
 
 class TestSensorManager(unittest.TestCase):
@@ -22,7 +23,6 @@ class TestSensorManager(unittest.TestCase):
     def _create_manager(self, line_val=False, dist_vals=(30.0, 20.0, 25.0),
                          rgb_vals=(100, 200, 50), current_val=250.0):
         """Helper : crée un SensorManager avec des capteurs mockés."""
-        from SensorManager import SensorManager
 
         mock_i2c = MagicMock()
         manager = SensorManager(mock_i2c)
@@ -149,7 +149,6 @@ class TestSensorManager(unittest.TestCase):
 
     def test_gpio_lock_existe(self):
         """Vérifie que le verrou GPIO est initialisé."""
-        from SensorManager import SensorManager
         manager = SensorManager(MagicMock())
         lock = manager._SensorManager__gpio_lock
         self.assertTrue(hasattr(lock, 'acquire'))

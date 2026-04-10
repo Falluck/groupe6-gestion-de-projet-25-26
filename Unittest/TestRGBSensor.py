@@ -8,21 +8,19 @@ sys.modules['RPi.GPIO'] = MagicMock()
 sys.modules['busio'] = MagicMock()
 sys.modules['board'] = MagicMock()
 sys.modules['adafruit_tcs34725'] = MagicMock()
-
+import adafruit_tcs34725
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'source'))
 
 from data.RGBData import RGBData
-
+from RGBSensor import RGBSensor
 
 class TestRGBSensor(unittest.TestCase):
     """Tests pour la classe RGBSensor."""
 
     def setUp(self):
-        import adafruit_tcs34725
         self.mock_tcs = MagicMock()
         adafruit_tcs34725.TCS34725.return_value = self.mock_tcs
 
-        from RGBSensor import RGBSensor
         self.RGBSensor = RGBSensor
 
         self.mock_i2c = MagicMock()

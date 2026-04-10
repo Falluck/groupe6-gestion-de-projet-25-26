@@ -3,24 +3,27 @@ from unittest.mock import MagicMock
 import sys
 import os
 
+
 sys.modules['RPi'] = MagicMock()
 sys.modules['RPi.GPIO'] = MagicMock()
 sys.modules['busio'] = MagicMock()
 sys.modules['board'] = MagicMock()
 sys.modules['adafruit_ina219'] = MagicMock()
+import adafruit_ina219
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'source'))
 
+from INASensor import INASensor
+from I2CSensor import I2CSensor
+from Sensor import Sensor
 
 class TestINASensor(unittest.TestCase):
     """Tests pour la classe INASensor."""
 
     def setUp(self):
-        import adafruit_ina219
         self.mock_ina = MagicMock()
         adafruit_ina219.INA219.return_value = self.mock_ina
 
-        from INASensor import INASensor
         self.INASensor = INASensor
 
         self.mock_i2c = MagicMock()
@@ -50,12 +53,10 @@ class TestINASensor(unittest.TestCase):
 
     def test_heritage_i2c_sensor(self):
         """Vérifie que INASensor hérite de I2CSensor."""
-        from I2CSensor import I2CSensor
         self.assertIsInstance(self.sensor, I2CSensor)
 
     def test_heritage_sensor(self):
         """Vérifie que INASensor hérite de Sensor (via I2CSensor)."""
-        from Sensor import Sensor
         self.assertIsInstance(self.sensor, Sensor)
 
     def test_read_value_capteur_deconnecte(self):

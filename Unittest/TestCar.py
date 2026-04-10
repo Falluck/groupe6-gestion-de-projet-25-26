@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 import sys
 import os
+import logging
 
 sys.modules['RPi'] = MagicMock()
 sys.modules['RPi.GPIO'] = MagicMock()
@@ -15,13 +16,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'source'))
 
 from data.DistanceData import DistanceData
 from data.RGBData import RGBData
+from Car import Car
 
 
 class TestCar(unittest.TestCase):
     """Tests pour la classe Car."""
 
     def setUp(self):
-        from Car import Car
         self.Car = Car
         self.mock_i2c = MagicMock()
         self.car = self.Car(self.mock_i2c)
@@ -93,7 +94,6 @@ class TestCar(unittest.TestCase):
 
     def test_logger_initialise(self):
         """Vérifie que le logger est initialisé."""
-        import logging
         self.assertIsInstance(self.car.logger, logging.Logger)
 
     @patch('Car.time')
