@@ -15,7 +15,8 @@ def afficher_menu():
     print("  [3]  Diagnostic complet")
     print("  [4]  Démarrage progressif (3s)")
     print("  [5]  Demi-tour")
-    print("  [6]  Quitter")
+    print("  [6]  Figure en 8")
+    print("  [7]  Quitter")
     print("=" * 50)
 
 
@@ -65,6 +66,10 @@ def main():
                 car.uTurn()
 
             elif choix == "6":
+                print("\n--- Figure en 8 ---")
+                car.figureEight()
+
+            elif choix == "7":
                 print("Arrêt du programme.")
                 break
 

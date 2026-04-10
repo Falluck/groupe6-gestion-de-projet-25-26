@@ -117,6 +117,35 @@ class TestCar(unittest.TestCase):
         self.mock_motor.setSpeed.assert_called_with(0)
         self.mock_motor.setAngle.assert_called_with(0)
 
+    @patch('Car.time.sleep')
+    def test_figure_eight_braque_gauche_puis_droite(self, mock_sleep):
+        """Vérifie que figureEight braque à gauche puis à droite."""
+        self.car.figureEight()
+        angles = [c[0][0] for c in self.mock_motor.setAngle.call_args_list]
+        self.assertTrue(any(a < 0 for a in angles))
+        self.assertTrue(any(a > 0 for a in angles))
+
+    @patch('Car.time.sleep')
+    def test_figure_eight_termine_a_zero(self, mock_sleep):
+        """Vérifie que figureEight remet vitesse et angle à 0."""
+        self.car.figureEight()
+        self.assertEqual(self.mock_motor.setSpeed.call_args_list[-1][0][0], 0)
+        self.assertEqual(self.mock_motor.setAngle.call_args_list[-1][0][0], 0)
+
+    @patch('Car.time.sleep')
+    def test_figure_eight_roule(self, mock_sleep):
+        """Vérifie que figureEight envoie une vitesse positive."""
+        self.car.figureEight()
+        vitesses = [c[0][0] for c in self.mock_motor.setSpeed.call_args_list]
+        self.assertTrue(any(v > 0 for v in vitesses))
+
+    @patch('Car.time.sleep')
+    def test_figure_eight_logs(self, mock_sleep):
+        """Vérifie que figureEight écrit dans les logs."""
+        with patch.object(self.car.logger, 'info') as ml:
+            self.car.figureEight()
+            msgs = [c[0][0] for c in ml.call_args_list]
+            self.assertTrue(any("8" in m for m in msgs))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
