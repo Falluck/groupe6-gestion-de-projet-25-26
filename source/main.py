@@ -13,48 +13,10 @@ def afficher_menu():
     print("  [1]  Diagnostic moteurs")
     print("  [2]  Diagnostic capteurs")
     print("  [3]  Diagnostic complet")
-    print("  [4]  Démarrage progressif")
+    print("  [4]  Démarrage progressif (3s)")
     print("  [5]  Demi-tour")
     print("  [6]  Quitter")
     print("=" * 50)
-
-
-def mode_diagnostic_moteurs(car):
-    """Teste les moteurs DC et le servo."""
-    print("Test moteurs en cours...")
-    car.prepareMotors()
-    print("Terminé.")
-
-
-def mode_diagnostic_capteurs(car):
-    """Teste tous les capteurs."""
-    print("Test capteurs en cours...")
-    all_ok = car.prepareSensors()
-    if all_ok:
-        print("RÉSULTAT : Tous les capteurs OK.")
-    else:
-        print("RÉSULTAT : Certains capteurs en échec.")
-
-
-def mode_diagnostic_complet(car):
-    """Teste moteurs + capteurs."""
-    print("=" * 50)
-    print("        DIAGNOSTIC PRE-COURSE")
-    print("=" * 50)
-
-    print("\n--- Test moteurs ---")
-    car.prepareMotors()
-    time.sleep(1)
-
-    print("\n--- Test capteurs ---")
-    all_ok = car.prepareSensors()
-    time.sleep(1)
-
-    print()
-    if all_ok:
-        print("RÉSULTAT : Tout est OK, la voiture est prête.")
-    else:
-        print("RÉSULTAT : Certains capteurs sont en échec. Vérifiez le câblage.")
 
 
 def main():
@@ -65,29 +27,49 @@ def main():
     i2c_bus = busio.I2C(board.SCL, board.SDA)
     car = Car(i2c_bus)
 
-    actions = {
-        "1": ("Diagnostic moteurs", lambda: mode_diagnostic_moteurs(car)),
-        "2": ("Diagnostic capteurs", lambda: mode_diagnostic_capteurs(car)),
-        "3": ("Diagnostic complet", lambda: mode_diagnostic_complet(car)),
-        "4": ("Démarrage progressif", lambda: car.startCar()),
-        "5": ("Demi-tour", lambda: car.uTurn()),
-    }
-
     try:
         while True:
             afficher_menu()
             choix = input("Choix : ").strip()
 
-            if choix == "6":
+            if choix == "1":
+                print("\n--- Diagnostic moteurs ---")
+                car.prepareMotors()
+
+            elif choix == "2":
+                print("\n--- Diagnostic capteurs ---")
+                all_ok = car.prepareSensors()
+                if all_ok:
+                    print("Tous les capteurs OK.")
+                else:
+                    print("Certains capteurs en échec.")
+
+            elif choix == "3":
+                print("\n--- Diagnostic complet ---")
+                car.prepareMotors()
+                time.sleep(1)
+                all_ok = car.prepareSensors()
+                if all_ok:
+                    print("Tout est OK.")
+                else:
+                    print("Certains capteurs en échec.")
+
+            elif choix == "4":
+                print("\n--- Démarrage progressif ---")
+                car.startCar()
+                time.sleep(3)
+                car.stopCar()
+
+            elif choix == "5":
+                print("\n--- Demi-tour ---")
+                car.uTurn()
+
+            elif choix == "6":
                 print("Arrêt du programme.")
                 break
 
-            action = actions.get(choix)
-            if action:
-                print(f"\n--- {action[0]} ---")
-                action[1]()
             else:
-                print("Choix invalide. Tapez un chiffre entre 1 et 6.")
+                print("Choix invalide.")
 
     except KeyboardInterrupt:
         print("\nArrêt de la voiture.")
