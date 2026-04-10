@@ -56,11 +56,11 @@ class Car:
         self.logger.info("--- Diagnostic servomoteur ---")
         self.__motorManager.setAngle(0)
         time.sleep(0.5)
-        self.__motorManager.setAngle(50)
+        self.__motorManager.setAngle(100)
         time.sleep(1)
         self.__motorManager.setAngle(0)
         time.sleep(1)
-        self.__motorManager.setAngle(-50)
+        self.__motorManager.setAngle(-100)
         time.sleep(1)
         self.__motorManager.setAngle(0)
         self.logger.info("Servomoteur : OK")
@@ -139,21 +139,29 @@ class Car:
 
     def uTurn(self):
         """
-        Effectue un demi-tour en manœuvrant avant/arrière avec braquage.
-        4 cycles de recul/avance avec braquage alterné.
+        Effectue un demi-tour en 3 étapes :
+        1. Avance + braque à gauche
+        2. Recule + braque à droite
+        3. Avance + braque à gauche
         """
         self.logger.info("Début demi-tour")
 
-        for _ in range(4):
-            self.__motorManager.setAngle(-100)
-            self.__motorManager.setSpeed(-25)
-            time.sleep(1)
-            self.__motorManager.setAngle(20)
-            self.__motorManager.setSpeed(10)
-            time.sleep(1)
+        self.__motorManager.setAngle(-100)
+        self.__motorManager.setSpeed(50)
+        time.sleep(1.2)
 
-        self.__motorManager.setAngle(0)
-        self.__motorManager.setSpeed(40)
-        time.sleep(1)
         self.__motorManager.setSpeed(0)
+        time.sleep(0.2)
+        self.__motorManager.setAngle(100)
+        self.__motorManager.setSpeed(-50)
+        time.sleep(1.2)
+
+        self.__motorManager.setSpeed(0)
+        time.sleep(0.2)
+        self.__motorManager.setAngle(-100)
+        self.__motorManager.setSpeed(50)
+        time.sleep(1.2)
+
+        self.__motorManager.setSpeed(0)
+        self.__motorManager.setAngle(0)
         self.logger.info("Demi-tour terminé")
