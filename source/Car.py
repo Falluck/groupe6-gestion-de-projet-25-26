@@ -11,7 +11,7 @@ setup_logging()
 OBSTACLE_THRESHOLD = 30
 SAFE_DISTANCE = 45
 AVOIDANCE_STEERING = 70
-
+EMERGENCY_DISTANCE = 8
 SPEED_MAX = 40
 SPEED_MIN = 15
 SPEED_CRUISE = 25
@@ -237,16 +237,23 @@ class Car:
     def zigzagAvoidance(self):
         """
         Évite un obstacle détecté devant la voiture.
-        Compare les distances gauche et droite, braque du côté
-        où il y a le plus de place, dépasse l'obstacle, puis
-        revient au centre.
+        Compare les distances gauche et droite, braque du côté dégagé,
+        dépasse l'obstacle, puis revient au centre.
         """
         self.logger.info("Évitement obstacle détecté")
-        self.__motorManager.setSpeed(SPEED_MIN)
 
         dist = self.__sensorManager.getDistance()
+        front = dist.front if dist.front is not None else SAFE_DISTANCE
         left = dist.left if dist.left is not None else 0
         right = dist.right if dist.right is not None else 0
+
+        if front <= EMERGENCY_DISTANCE:
+            self.logger.warning(f"URGENCE : obstacle à {front} cm — arrêt immédiat")
+            self.__motorManager.setSpeed(0)
+            self.__motorManager.setAngle(0)
+            return
+
+        self.__motorManager.setSpeed(SPEED_MIN)
 
         if left >= right:
             steer_avoid = -AVOIDANCE_STEERING

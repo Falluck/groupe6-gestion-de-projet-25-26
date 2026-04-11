@@ -1,8 +1,10 @@
 import time
 import threading
+import threading
 import busio
 import board
 import RPi.GPIO as GPIO
+from Car import Car, SPEED_MIN, SPEED_CRUISE, EMERGENCY_DISTANCE, OBSTACLE_THRESHOLD, AVOIDANCE_STEERING
 from Car import Car, SPEED_MIN, SPEED_CRUISE, EMERGENCY_DISTANCE, OBSTACLE_THRESHOLD, AVOIDANCE_STEERING
 
 
@@ -165,6 +167,7 @@ def main():
             elif choix == "7":
                 print("\n--- Évitement obstacle ---")
                 mode_evitement_continu(car)
+                mode_evitement_continu(car)
             elif choix == "8":
                 print("\n--- Suivi de couloir ---")
                 mode_tourner(car)
@@ -188,3 +191,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

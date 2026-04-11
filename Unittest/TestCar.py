@@ -119,6 +119,8 @@ class TestCar(unittest.TestCase):
 
 
 
+
+
     @patch('Car.time.sleep')
     def test_figure_eight_braque_gauche_puis_droite(self, mock_sleep):
         """Vérifie que figureEight braque à gauche puis à droite."""
@@ -148,6 +150,8 @@ class TestCar(unittest.TestCase):
             self.car.figureEight()
             msgs = [c[0][0] for c in ml.call_args_list]
             self.assertTrue(any("8" in m for m in msgs))
+
+
 
 
     @patch('Car.time.sleep')
@@ -192,6 +196,7 @@ class TestCar(unittest.TestCase):
 
     @patch('Car.time.sleep')
     def test_zigzag_contre_braque(self, mock_sleep):
+        """Vérifie que zigzag contre-braque après l évitement."""
         """Vérifie que zigzag contre-braque après l évitement."""
         self.mock_sensor.getDistance.return_value = DistanceData(20.0, 60.0, 30.0)
         self.car.zigzagAvoidance()
