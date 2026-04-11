@@ -321,3 +321,23 @@ class Car:
             self.stopCar()
             self.logger.info("Test capteur de ligne interrompu")
             return False
+
+    def getDistanceReadings(self):
+        """Lit les capteurs de distance."""
+        return self.__sensorManager.getDistance()
+
+    def setSpeed(self, speed):
+        """Envoie une consigne de vitesse aux moteurs."""
+        self.__motorManager.setSpeed(speed)
+
+    def setAngle(self, angle):
+        """Envoie une consigne de braquage au servo."""
+        self.__motorManager.setAngle(angle)
+
+    def computeSteering(self, left, right):
+        """Calcule le braquage proportionnel à la différence gauche/droite."""
+        if left + right == 0:
+            return 0
+        deviation = (right - left) / (left + right)
+        steering = int(deviation * AVOIDANCE_STEERING)
+        return max(-100, min(100, steering))
