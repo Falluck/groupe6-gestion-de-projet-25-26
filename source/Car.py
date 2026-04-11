@@ -11,7 +11,7 @@ setup_logging()
 OBSTACLE_THRESHOLD = 30
 SAFE_DISTANCE = 45
 AVOIDANCE_STEERING = 70
-
+EMERGENCY_DISTANCE = 8
 SPEED_MAX = 40
 SPEED_MIN = 15
 SPEED_CRUISE = 25
@@ -236,16 +236,23 @@ class Car:
     def zigzagAvoidance(self):
         """
         Évite un obstacle détecté devant la voiture.
-        Compare les distances gauche et droite, braque du côté
-        où il y a le plus de place, dépasse l'obstacle, puis
-        revient au centre.
+        Compare les distances gauche et droite, braque du côté dégagé,
+        dépasse l'obstacle, puis revient au centre.
         """
         self.logger.info("Évitement obstacle détecté")
-        self.__motorManager.setSpeed(SPEED_MIN)
 
         dist = self.__sensorManager.getDistance()
+        front = dist.front if dist.front is not None else SAFE_DISTANCE
         left = dist.left if dist.left is not None else 0
         right = dist.right if dist.right is not None else 0
+
+        if front <= EMERGENCY_DISTANCE:
+            self.logger.warning(f"URGENCE : obstacle à {front} cm — arrêt immédiat")
+            self.__motorManager.setSpeed(0)
+            self.__motorManager.setAngle(0)
+            return
+
+        self.__motorManager.setSpeed(SPEED_MIN)
 
         if left >= right:
             steer_avoid = -AVOIDANCE_STEERING
@@ -267,3 +274,38 @@ class Car:
         time.sleep(0.5)
 
         self.logger.info("Obstacle évité")
+
+    def getDistanceReadings(self):
+        """
+        Lit les capteurs de distance une fois et retourne les résultats.
+
+        Returns:
+            DistanceData: Les distances front, left, right.
+        """
+        return self.__sensorManager.getDistance()
+
+    def setSpeed(self, speed):
+        """Envoie une consigne de vitesse aux moteurs."""
+        self.__motorManager.setSpeed(speed)
+
+    def setAngle(self, angle):
+        """Envoie une consigne de braquage au servo."""
+        self.__motorManager.setAngle(angle)
+
+    def computeSteering(self, left, right):
+        """
+        Calcule l angle de braquage proportionnel à la différence gauche/droite.
+        Plus un mur est proche, plus la voiture braque dans le sens opposé.
+
+        Args:
+            left (float): Distance gauche en cm.
+            right (float): Distance droite en cm.
+
+        Returns:
+            int: Angle de braquage (-100 à 100).
+        """
+        if left + right == 0:
+            return 0
+        deviation = (right - left) / (left + right)
+        steering = int(deviation * AVOIDANCE_STEERING)
+        return max(-100, min(100, steering))
