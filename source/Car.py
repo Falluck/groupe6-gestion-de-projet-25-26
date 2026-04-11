@@ -180,17 +180,17 @@ class Car:
         self.logger.info("Début demi-tour")
 
         self.__motorManager.setAngle(-100)
-        self.__motorManager.setSpeed(50)
+        self.__motorManager.setSpeed(35)
         time.sleep(1.2)
 
         self.__motorManager.setSpeed(0)
-        time.sleep(0.2)
+        time.sleep(1.5)
         self.__motorManager.setAngle(100)
-        self.__motorManager.setSpeed(-50)
+        self.__motorManager.setSpeed(-35)
         time.sleep(1.2)
 
         self.__motorManager.setSpeed(0)
-        time.sleep(0.2)
+        time.sleep(1.5)
         self.__motorManager.setAngle(-100)
         self.__motorManager.setSpeed(50)
         time.sleep(1.2)
@@ -207,12 +207,15 @@ class Car:
         """
         self.logger.info("Début figure en 8")
 
-        self.__motorManager.setSpeed(30)
-        self.__motorManager.setAngle(-60)
-        time.sleep(4)
+        self.__motorManager.setSpeed(-30)
+        time.sleep(0.5)
+        self.__motorManager.setSpeed(-60)
+        self.__motorManager.setAngle(-56)
+
+        time.sleep(4.38)
 
         self.__motorManager.setAngle(60)
-        time.sleep(4)
+        time.sleep(4.78)
 
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(0)
