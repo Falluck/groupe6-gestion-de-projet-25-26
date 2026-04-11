@@ -11,14 +11,6 @@ import time
 class SensorManager:
     """
     Gestionnaire de tous les capteurs du véhicule.
-
-    Attributs:
-        __lineSensor (LineSensor): Capteur infrarouge de ligne.
-        __distSensorFront (DistanceSensor): Capteur de distance avant.
-        __distSensorLeft (DistanceSensor): Capteur de distance gauche.
-        __distSensorRight (DistanceSensor): Capteur de distance droit.
-        __rgbSensor (RGBSensor): Capteur de couleur RGB.
-        __inaSensor (INASensor): Capteur de courant/tension.
     """
 
     def __init__(self, i2c_bus: busio.I2C):
@@ -31,12 +23,7 @@ class SensorManager:
         self.__gpio_lock = threading.Lock()
 
     def detectLine(self) -> bool:
-        """
-        Détecte si le véhicule est sur une ligne noire.
-
-        Returns:
-            bool: True si une ligne est détectée, False sinon.
-        """
+        """Détecte si le véhicule est sur une ligne noire."""
         try:
             return self.__lineSensor.readValue()
         except Exception as e:
@@ -45,42 +32,39 @@ class SensorManager:
 
     def getDistance(self) -> DistanceData:
         """
-        Récupère les distances moyennes des trois capteurs ultrasoniques.
-        Utilise un verrou pour sérialiser les accès GPIO.
-
-        Returns:
-            DistanceData: Objet contenant les distances avant, gauche et droite.
+        Récupère les distances des trois capteurs ultrasoniques en parallèle.
+        Chaque capteur est lu dans un thread séparé.
         """
-        sensors = [
-            self.__distSensorFront,
-            self.__distSensorLeft,
-            self.__distSensorRight,
-        ]
         results = [None, None, None]
 
-        for i, sensor in enumerate(sensors):
+        def read_sensor(index, sensor):
             readings = []
-            for _ in range(5):
+            for _ in range(2):
                 with self.__gpio_lock:
                     value = sensor.readValue()
                 if value is not None:
                     readings.append(value)
-                time.sleep(0.01)
-            results[i] = round(sum(readings) / len(readings), 1) if readings else None
+            results[index] = round(sum(readings) / len(readings), 1) if readings else None
+
+        sensors = [
+            (0, self.__distSensorFront),
+            (1, self.__distSensorLeft),
+            (2, self.__distSensorRight),
+        ]
+
+        threads = []
+        for index, sensor in sensors:
+            t = threading.Thread(target=read_sensor, args=(index, sensor))
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join(timeout=1.0)
 
         return DistanceData(results[0], results[1], results[2])
 
     def isGreen(self, greenMinimum: int = 25, deltaMinimum: int = 5) -> bool:
-        """
-        Détecte si la couleur captée est verte.
-
-        Args:
-            greenMinimum (int): Seuil minimum de vert.
-            deltaMinimum (int): Écart minimum entre vert et rouge.
-
-        Returns:
-            bool: True si vert détecté, False sinon.
-        """
+        """Détecte si la couleur captée est verte."""
         try:
             data = self.__rgbSensor.readValue()
             return data.green >= greenMinimum and (data.green - data.red) >= deltaMinimum
@@ -89,16 +73,7 @@ class SensorManager:
             return False
 
     def isRed(self, redMinimum: int = 150, deltaMinimum: int = 30) -> bool:
-        """
-        Détecte si la couleur captée est rouge.
-
-        Args:
-            redMinimum (int): Seuil minimum de rouge.
-            deltaMinimum (int): Écart minimum entre rouge et vert.
-
-        Returns:
-            bool: True si rouge détecté, False sinon.
-        """
+        """Détecte si la couleur captée est rouge."""
         try:
             data = self.__rgbSensor.readValue()
             return data.red >= redMinimum and (data.red - data.green) >= deltaMinimum
@@ -107,12 +82,7 @@ class SensorManager:
             return False
 
     def getCurrent(self) -> float:
-        """
-        Récupère le courant mesuré par le capteur INA219.
-
-        Returns:
-            float: Courant en milliampères, ou None si indisponible.
-        """
+        """Récupère le courant mesuré par le capteur INA219."""
         try:
             sensor_data = self.__inaSensor.readValue()
             return sensor_data.get("Current", None)
