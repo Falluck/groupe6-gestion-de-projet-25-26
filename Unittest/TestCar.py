@@ -196,5 +196,59 @@ class TestCar(unittest.TestCase):
         self.assertTrue(any(a < 0 for a in angles) and any(a > 0 for a in angles))
 
 
+    def test_line_count_depart(self):
+        """Vérifie que le premier passage passe de -1 à 0."""
+        self.car._Car__tour = -1
+        self.car._Car__last_line_state = False
+        self.mock_sensor.detectLine.return_value = True
+        self.assertEqual(self.car.lineCount(), 0)
+
+    def test_line_count_tour_1(self):
+        """Vérifie que le deuxième passage passe de 0 à 1."""
+        self.car._Car__tour = 0
+        self.car._Car__last_line_state = False
+        self.mock_sensor.detectLine.return_value = True
+        self.assertEqual(self.car.lineCount(), 1)
+
+    def test_line_count_pas_front_montant(self):
+        """Vérifie que True vers True ne compte pas."""
+        self.car._Car__tour = 0
+        self.car._Car__last_line_state = True
+        self.mock_sensor.detectLine.return_value = True
+        self.assertEqual(self.car.lineCount(), 0)
+
+    def test_line_count_front_descendant(self):
+        """Vérifie que True vers False ne compte pas."""
+        self.car._Car__tour = 0
+        self.car._Car__last_line_state = True
+        self.mock_sensor.detectLine.return_value = False
+        self.assertEqual(self.car.lineCount(), 0)
+
+    def test_line_count_false_false(self):
+        """Vérifie que False vers False ne compte pas."""
+        self.car._Car__tour = 0
+        self.car._Car__last_line_state = False
+        self.mock_sensor.detectLine.return_value = False
+        self.assertEqual(self.car.lineCount(), 0)
+
+    def test_line_count_maj_state(self):
+        """Vérifie que last_line_state est mis à jour."""
+        self.car._Car__last_line_state = False
+        self.mock_sensor.detectLine.return_value = True
+        self.car.lineCount()
+        self.assertTrue(self.car._Car__last_line_state)
+
+
+    def test_line_sensor_detecte(self):
+        """Vérifie que testLineSensor retourne True quand ligne détectée."""
+        self.mock_sensor.detectLine.side_effect = [False, False, True]
+        self.assertTrue(self.car.testLineSensor())
+
+    def test_line_sensor_appelle_stop(self):
+        """Vérifie que testLineSensor arrête la voiture."""
+        self.mock_sensor.detectLine.return_value = True
+        self.car.testLineSensor()
+        self.mock_motor.setSpeed.assert_called_with(0)
+        
 if __name__ == '__main__':
     unittest.main(verbosity=2)

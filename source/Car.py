@@ -16,6 +16,7 @@ SPEED_MAX = 40
 SPEED_MIN = 15
 SPEED_CRUISE = 25
 
+
 class Car:
     """
     Classe principale du véhicule autonome.
@@ -267,3 +268,56 @@ class Car:
         time.sleep(0.5)
 
         self.logger.info("Obstacle évité")
+
+    def lineCount(self):
+        """
+        Vérifie si la voiture vient de franchir la ligne d arrivée.
+        Détection de front montant : quand le capteur passe de False à True,
+        on incrémente le compteur de tours.
+
+        Returns:
+            int: Numéro du tour actuel.
+        """
+        with self.__lock:
+            current_state = self.__sensorManager.detectLine()
+
+            if current_state and not self.__last_line_state:
+                self.__tour += 1
+                if self.__tour == 0:
+                    self.logger.info("=== LIGNE DE DÉPART FRANCHIE ===")
+                else:
+                    self.logger.info(f"=== TOUR {self.__tour}/{self.__totalLaps} TERMINÉ ===")
+
+            self.__last_line_state = current_state
+            return self.__tour
+
+    def testLineSensor(self, timeout: float = 5.0):
+        """
+        Roule en avant à vitesse réduite et s arrête dès que le capteur IR
+        détecte une ligne noire ou après le timeout.
+
+        Args:
+            timeout (float): Durée max en secondes avant arrêt automatique.
+
+        Returns:
+            bool: True si ligne détectée, False si timeout ou interrompu.
+        """
+        self.logger.info(f"Test capteur de ligne : max {timeout}s...")
+        self.__motorManager.setAngle(0)
+        self.__motorManager.setSpeed(SPEED_MIN)
+
+        try:
+            start = time.monotonic()
+            while time.monotonic() - start < timeout:
+                if self.__sensorManager.detectLine():
+                    self.logger.info("Ligne noire détectée — arrêt")
+                    self.stopCar()
+                    return True
+                time.sleep(0.05)
+            self.logger.info("Timeout — aucune ligne détectée")
+            self.stopCar()
+            return False
+        except KeyboardInterrupt:
+            self.stopCar()
+            self.logger.info("Test capteur de ligne interrompu")
+            return False

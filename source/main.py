@@ -16,7 +16,8 @@ def afficher_menu():
     print("  [5]  Demi-tour")
     print("  [6]  Figure en 8")
     print("  [7]  Évitement obstacle")
-    print("  [8]  Quitter")
+    print("  [8]  Test infrarouge (arrêt sur ligne noire)")
+    print("  [9]  Quitter")
     print("=" * 50)
 
 
@@ -58,6 +59,14 @@ def main():
                 input("Placez un obstacle devant la voiture. Entrée pour lancer...")
                 car.zigzagAvoidance()
             elif choix == "8":
+                print("\n--- Test infrarouge ---")
+                print("La voiture roule 5s max ou s'arrête sur ligne noire.")
+                detected = car.testLineSensor()
+                if detected:
+                    print("LIGNE NOIRE DÉTECTÉE — Arrêt !")
+                else:
+                    print("Pas de ligne détectée (timeout).")
+            elif choix == "9":
                 print("Arrêt du programme.")
                 break
             else:
