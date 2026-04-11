@@ -121,15 +121,41 @@ class Car:
 
     def startCar(self):
         """
-        Démarre la voiture en augmentant progressivement la vitesse
-        pour éviter une accélération brutale.
+        Démarre la voiture en avançant 5 secondes de plus en plus vite,
+        s'arrête, puis fait de même en marche arrière.
         """
-        self.logger.info("Démarrage progressif")
+        self.logger.info("Démarrage progressif — marche avant")
+        self.__motorManager.setAngle(0)
+        self.__motorManager.setSpeed(15)
+        time.sleep(1)
         self.__motorManager.setSpeed(25)
         time.sleep(1)
-        self.__motorManager.setSpeed(50)
+        self.__motorManager.setSpeed(35)
         time.sleep(1)
-        self.__motorManager.setSpeed(75)
+        self.__motorManager.setSpeed(45)
+        time.sleep(1)
+        self.__motorManager.setSpeed(55)
+        time.sleep(1)
+
+        self.__motorManager.setSpeed(0)
+        self.logger.info("Arrêt")
+        time.sleep(1)
+
+        self.logger.info("Démarrage progressif — marche arrière")
+        self.__motorManager.setSpeed(-15)
+        time.sleep(1)
+        self.__motorManager.setSpeed(-25)
+        time.sleep(1)
+        self.__motorManager.setSpeed(-35)
+        time.sleep(1)
+        self.__motorManager.setSpeed(-45)
+        time.sleep(1)
+        self.__motorManager.setSpeed(-55)
+        time.sleep(1)
+
+        self.__motorManager.setSpeed(0)
+        self.logger.info("Démarrage progressif terminé")
+
 
     def stopCar(self):
         """Arrête la voiture (vitesse et direction à zéro)."""
