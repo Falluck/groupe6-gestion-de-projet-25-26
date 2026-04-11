@@ -146,6 +146,55 @@ class TestCar(unittest.TestCase):
             self.car.figureEight()
             msgs = [c[0][0] for c in ml.call_args_list]
             self.assertTrue(any("8" in m for m in msgs))
+            
+    @patch('Car.time.sleep')
+    def test_reverse_recule(self, mock_sleep):
+        """Vérifie que reverseGear envoie une vitesse négative."""
+        self.car.reverseGear()
+        self.assertTrue(any(c[0][0] < 0 for c in self.mock_motor.setSpeed.call_args_list))
+
+    @patch('Car.time.sleep')
+    def test_reverse_termine_zero(self, mock_sleep):
+        """Vérifie que reverseGear remet la vitesse à 0."""
+        self.car.reverseGear()
+        self.assertEqual(self.mock_motor.setSpeed.call_args_list[-1][0][0], 0)
+
+    @patch('Car.time.sleep')
+    def test_zigzag_gauche(self, mock_sleep):
+        """Vérifie que zigzag braque à gauche quand gauche est plus dégagé."""
+        self.mock_sensor.getDistance.return_value = DistanceData(20.0, 60.0, 30.0)
+        self.car.zigzagAvoidance()
+        self.assertTrue(any(c[0][0] < 0 for c in self.mock_motor.setAngle.call_args_list))
+
+    @patch('Car.time.sleep')
+    def test_zigzag_droite(self, mock_sleep):
+        """Vérifie que zigzag braque à droite quand droite est plus dégagé."""
+        self.mock_sensor.getDistance.return_value = DistanceData(20.0, 30.0, 60.0)
+        self.car.zigzagAvoidance()
+        self.assertTrue(any(c[0][0] > 0 for c in self.mock_motor.setAngle.call_args_list))
+
+    @patch('Car.time.sleep')
+    def test_zigzag_centre_fin(self, mock_sleep):
+        """Vérifie que zigzag remet les roues droites à la fin."""
+        self.mock_sensor.getDistance.return_value = DistanceData(20.0, 40.0, 40.0)
+        self.car.zigzagAvoidance()
+        self.assertEqual(self.mock_motor.setAngle.call_args_list[-1][0][0], 0)
+
+    @patch('Car.time.sleep')
+    def test_zigzag_none(self, mock_sleep):
+        """Vérifie que zigzag ne crashe pas si un capteur retourne None."""
+        self.mock_sensor.getDistance.return_value = DistanceData(20.0, None, 30.0)
+        self.car.zigzagAvoidance()
+        self.assertTrue(self.mock_motor.setAngle.called)
+
+    @patch('Car.time.sleep')
+    def test_zigzag_contre_braque(self, mock_sleep):
+        """Vérifie que zigzag contre-braque après l'évitement."""
+        self.mock_sensor.getDistance.return_value = DistanceData(20.0, 60.0, 30.0)
+        self.car.zigzagAvoidance()
+        angles = [c[0][0] for c in self.mock_motor.setAngle.call_args_list]
+        self.assertTrue(any(a < 0 for a in angles) and any(a > 0 for a in angles))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

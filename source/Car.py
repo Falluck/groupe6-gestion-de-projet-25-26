@@ -8,6 +8,13 @@ from logs_config import setup_logging
 
 setup_logging()
 
+OBSTACLE_THRESHOLD = 30
+SAFE_DISTANCE = 45
+AVOIDANCE_STEERING = 70
+
+SPEED_MAX = 40
+SPEED_MIN = 15
+SPEED_CRUISE = 25
 
 class Car:
     """
@@ -210,3 +217,50 @@ class Car:
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(0)
         self.logger.info("Figure en 8 terminée")
+        
+    def reverseGear(self):
+            """
+            Marche arrière à vitesse réduite pendant 1.5 secondes puis arrêt.
+            Utilisé pour reculer avant un demi-tour ou après un obstacle.
+            """
+            self.logger.info("Marche arrière")
+            self.__motorManager.setAngle(0)
+            self.__motorManager.setSpeed(-SPEED_MIN)
+            time.sleep(1.5)
+            self.__motorManager.setSpeed(0)
+            self.logger.info("Marche arrière terminée")
+            
+    def zigzagAvoidance(self):
+        """
+        Évite un obstacle détecté devant la voiture.
+        Compare les distances gauche et droite, braque du côté
+        où il y a le plus de place, dépasse l'obstacle, puis
+        revient au centre.
+        """
+        self.logger.info("Évitement obstacle détecté")
+        self.__motorManager.setSpeed(SPEED_MIN)
+
+        dist = self.__sensorManager.getDistance()
+        left = dist.left if dist.left is not None else 0
+        right = dist.right if dist.right is not None else 0
+
+        if left >= right:
+            steer_avoid = -AVOIDANCE_STEERING
+            steer_return = AVOIDANCE_STEERING
+        else:
+            steer_avoid = AVOIDANCE_STEERING
+            steer_return = -AVOIDANCE_STEERING
+
+        self.__motorManager.setAngle(steer_avoid)
+        self.__motorManager.setSpeed(SPEED_CRUISE)
+        time.sleep(1.2)
+
+        self.__motorManager.setAngle(steer_return)
+        self.__motorManager.setSpeed(SPEED_CRUISE)
+        time.sleep(1.0)
+
+        self.__motorManager.setAngle(0)
+        self.__motorManager.setSpeed(SPEED_CRUISE)
+        time.sleep(0.5)
+
+        self.logger.info("Obstacle évité")
