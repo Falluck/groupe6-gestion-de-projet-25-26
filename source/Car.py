@@ -18,6 +18,19 @@ SPEED_CRUISE = 25
 
 
 class Car:
+    """
+    Classe principale du véhicule autonome.
+    Orchestre les managers de capteurs et de moteurs pour piloter la voiture.
+
+    Attributs:
+        __carName (str): Nom du véhicule.
+        __sensorManager (SensorManager): Gestionnaire des capteurs.
+        __motorManager (MotorManager): Gestionnaire des moteurs.
+        __tour (int): Compteur de tours actuel.
+        __totalLaps (int): Nombre total de tours à effectuer.
+        __lock (RLock): Verrou pour la synchronisation des threads.
+        __last_line_state (bool): Dernier état du capteur de ligne.
+    """
 
     def __init__(self, i2c_bus: busio.I2C):
         self.__carName = "Car"
@@ -31,6 +44,7 @@ class Car:
         self.logger.info(f"Initialisation du véhicule '{self.__carName}'")
 
     def prepareMotors(self):
+        """Teste les moteurs DC et le servomoteur avant la course."""
         self.logger.info("--- Diagnostic moteurs DC ---")
         self.__motorManager.setSpeed(0)
         time.sleep(0.5)
@@ -56,6 +70,7 @@ class Car:
         self.logger.info("Servomoteur : OK")
 
     def prepareSensors(self) -> bool:
+        """Teste individuellement chaque capteur et génère un diagnostic automatique."""
         self.logger.info("--- Diagnostic capteurs ---")
         all_ready = True
 
@@ -104,6 +119,7 @@ class Car:
         return all_ready
 
     def startCar(self):
+        """Avance 5s de plus en plus vite, s'arrête, puis fait de même en marche arrière."""
         self.logger.info("Démarrage progressif — marche avant")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(15)
@@ -137,11 +153,13 @@ class Car:
         self.logger.info("Démarrage progressif terminé")
 
     def stopCar(self):
+        """Arrête la voiture (vitesse et direction à zéro)."""
         self.__motorManager.setSpeed(0)
         self.__motorManager.setAngle(0)
         self.logger.info("Véhicule arrêté")
 
     def uTurn(self):
+        """Effectue un demi-tour en 3 manœuvres (gauche, recul droite, gauche)."""
         self.logger.info("Début demi-tour")
 
         self.__motorManager.setAngle(-100)
@@ -165,6 +183,7 @@ class Car:
         self.logger.info("Demi-tour terminé")
 
     def figureEight(self):
+        """La voiture dessine un 8 au sol (boucle gauche puis droite)."""
         self.logger.info("Début figure en 8")
 
         self.__motorManager.setSpeed(-30)
@@ -182,6 +201,7 @@ class Car:
         self.logger.info("Figure en 8 terminée")
 
     def reverseGear(self):
+        """Marche arrière à vitesse réduite pendant 1.5 secondes puis arrêt."""
         self.logger.info("Marche arrière")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(-SPEED_MIN)
@@ -190,6 +210,7 @@ class Car:
         self.logger.info("Marche arrière terminée")
 
     def zigzagAvoidance(self):
+        """Évite un obstacle ponctuel en braquant du côté dégagé puis en revenant."""
         self.logger.info("Évitement obstacle détecté")
 
         dist = self.__sensorManager.getDistance()
@@ -227,6 +248,7 @@ class Car:
         self.logger.info("Obstacle évité")
 
     def lineCount(self):
+        """Détecte le franchissement de la ligne (front montant) et incrémente le compteur."""
         with self.__lock:
             current_state = self.__sensorManager.detectLine()
 
@@ -241,6 +263,7 @@ class Car:
             return self.__tour
 
     def testLineSensor(self, timeout: float = 5.0):
+        """Roule en avant et s'arrête dès que le capteur IR détecte une ligne noire."""
         self.logger.info(f"Test capteur de ligne : max {timeout}s...")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(SPEED_MIN)
@@ -262,15 +285,19 @@ class Car:
             return False
 
     def getDistanceReadings(self):
+        """Lit les capteurs de distance."""
         return self.__sensorManager.getDistance()
 
     def setSpeed(self, speed):
+        """Envoie une consigne de vitesse aux moteurs."""
         self.__motorManager.setSpeed(speed)
 
     def setAngle(self, angle):
+        """Envoie une consigne de braquage au servo."""
         self.__motorManager.setAngle(angle)
 
     def computeSteering(self, left, right):
+        """Calcule le braquage proportionnel à la différence gauche/droite."""
         if left + right == 0:
             return 0
         deviation = (right - left) / (left + right)
@@ -278,6 +305,7 @@ class Car:
         return max(-100, min(100, steering))
 
     def modeEvitement(self):
+        """Conduite continue avec évitement d'obstacles. S'arrête avec Ctrl+C."""
         self.logger.info("Mode évitement d'obstacles activé")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(SPEED_CRUISE)
@@ -317,6 +345,7 @@ class Car:
             self.stopCar()
 
     def modeTourner(self):
+        """Conduite continue en suivi de couloir via stayMid(). S'arrête avec Ctrl+C."""
         self.logger.info("Mode suivi de couloir activé")
         self.__motorManager.setAngle(0)
 
@@ -341,6 +370,7 @@ class Car:
             self.stopCar()
 
     def stayMid(self) -> tuple:
+        """Calcule vitesse et braquage pour rester centré dans le couloir."""
         dist = self.__sensorManager.getDistance()
         front = dist.front if dist.front is not None else 100.0
         left = dist.left if dist.left is not None else 0.0
@@ -360,6 +390,7 @@ class Car:
         return (speed, steering)
 
     def start(self, max_tours: int) -> None:
+        """Lance la course autonome pour un nombre de tours donné."""
         if not isinstance(max_tours, int) or max_tours < 1:
             raise ValueError("max_tours doit être un entier >= 1.")
 
