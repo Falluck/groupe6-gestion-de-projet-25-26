@@ -44,11 +44,7 @@ class Car:
         self.logger.info(f"Initialisation du véhicule '{self.__carName}'")
 
     def prepareMotors(self):
-        """
-        Teste les moteurs DC et le servomoteur avant la course.
-        Vérifie que chaque moteur répond correctement en effectuant
-        un cycle avant/arrière pour les DC et gauche/droite pour le servo.
-        """
+        """Teste les moteurs DC et le servomoteur avant la course."""
         self.logger.info("--- Diagnostic moteurs DC ---")
         self.__motorManager.setSpeed(0)
         time.sleep(0.5)
@@ -74,12 +70,7 @@ class Car:
         self.logger.info("Servomoteur : OK")
 
     def prepareSensors(self) -> bool:
-        """
-        Teste individuellement chaque capteur et génère un diagnostic automatique.
-
-        Returns:
-            bool: True si tous les capteurs répondent, False sinon.
-        """
+        """Teste individuellement chaque capteur et génère un diagnostic automatique."""
         self.logger.info("--- Diagnostic capteurs ---")
         all_ready = True
 
@@ -128,10 +119,7 @@ class Car:
         return all_ready
 
     def startCar(self):
-        """
-        Démarre la voiture en avançant 5 secondes de plus en plus vite,
-        s'arrête, puis fait de même en marche arrière.
-        """
+        """Avance 5s de plus en plus vite, s'arrête, puis fait de même en marche arrière."""
         self.logger.info("Démarrage progressif — marche avant")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(15)
@@ -164,7 +152,6 @@ class Car:
         self.__motorManager.setSpeed(0)
         self.logger.info("Démarrage progressif terminé")
 
-
     def stopCar(self):
         """Arrête la voiture (vitesse et direction à zéro)."""
         self.__motorManager.setSpeed(0)
@@ -172,12 +159,7 @@ class Car:
         self.logger.info("Véhicule arrêté")
 
     def uTurn(self):
-        """
-        Effectue un demi-tour en 3 étapes :
-        1. Avance + braque à gauche
-        2. Recule + braque à droite
-        3. Avance + braque à gauche
-        """
+        """Effectue un demi-tour en 3 manœuvres (gauche, recul droite, gauche)."""
         self.logger.info("Début demi-tour")
 
         self.__motorManager.setAngle(-100)
@@ -200,12 +182,8 @@ class Car:
         self.__motorManager.setAngle(0)
         self.logger.info("Demi-tour terminé")
 
-        
     def figureEight(self):
-        """
-        La voiture roule en dessinant un 8 au sol.
-        Boucle gauche puis boucle droite, retour au point de départ.
-        """
+        """La voiture dessine un 8 au sol (boucle gauche puis droite)."""
         self.logger.info("Début figure en 8")
 
         self.__motorManager.setSpeed(-30)
@@ -221,25 +199,18 @@ class Car:
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(0)
         self.logger.info("Figure en 8 terminée")
-        
+
     def reverseGear(self):
-            """
-            Marche arrière à vitesse réduite pendant 1.5 secondes puis arrêt.
-            Utilisé pour reculer avant un demi-tour ou après un obstacle.
-            """
-            self.logger.info("Marche arrière")
-            self.__motorManager.setAngle(0)
-            self.__motorManager.setSpeed(-SPEED_MIN)
-            time.sleep(1.5)
-            self.__motorManager.setSpeed(0)
-            self.logger.info("Marche arrière terminée")
-            
+        """Marche arrière à vitesse réduite pendant 1.5 secondes puis arrêt."""
+        self.logger.info("Marche arrière")
+        self.__motorManager.setAngle(0)
+        self.__motorManager.setSpeed(-SPEED_MIN)
+        time.sleep(1.5)
+        self.__motorManager.setSpeed(0)
+        self.logger.info("Marche arrière terminée")
+
     def zigzagAvoidance(self):
-        """
-        Évite un obstacle détecté devant la voiture.
-        Compare les distances gauche et droite, braque du côté dégagé,
-        dépasse l'obstacle, puis revient au centre.
-        """
+        """Évite un obstacle ponctuel en braquant du côté dégagé puis en revenant."""
         self.logger.info("Évitement obstacle détecté")
 
         dist = self.__sensorManager.getDistance()
@@ -277,14 +248,7 @@ class Car:
         self.logger.info("Obstacle évité")
 
     def lineCount(self):
-        """
-        Vérifie si la voiture vient de franchir la ligne d arrivée.
-        Détection de front montant : quand le capteur passe de False à True,
-        on incrémente le compteur de tours.
-
-        Returns:
-            int: Numéro du tour actuel.
-        """
+        """Détecte le franchissement de la ligne (front montant) et incrémente le compteur."""
         with self.__lock:
             current_state = self.__sensorManager.detectLine()
 
@@ -299,16 +263,7 @@ class Car:
             return self.__tour
 
     def testLineSensor(self, timeout: float = 5.0):
-        """
-        Roule en avant à vitesse réduite et s arrête dès que le capteur IR
-        détecte une ligne noire ou après le timeout.
-
-        Args:
-            timeout (float): Durée max en secondes avant arrêt automatique.
-
-        Returns:
-            bool: True si ligne détectée, False si timeout ou interrompu.
-        """
+        """Roule en avant et s'arrête dès que le capteur IR détecte une ligne noire."""
         self.logger.info(f"Test capteur de ligne : max {timeout}s...")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(SPEED_MIN)
@@ -348,3 +303,130 @@ class Car:
         deviation = (right - left) / (left + right)
         steering = int(deviation * AVOIDANCE_STEERING)
         return max(-100, min(100, steering))
+
+    def modeEvitement(self):
+        """Conduite continue avec évitement d'obstacles. S'arrête avec Ctrl+C."""
+        self.logger.info("Mode évitement d'obstacles activé")
+        self.__motorManager.setAngle(0)
+        self.__motorManager.setSpeed(SPEED_CRUISE)
+
+        try:
+            while True:
+                dist = self.__sensorManager.getDistance()
+                front = dist.front if dist.front is not None else 100.0
+                left = dist.left if dist.left is not None else 0.0
+                right = dist.right if dist.right is not None else 0.0
+
+                if front <= EMERGENCY_DISTANCE:
+                    self.__motorManager.setSpeed(0)
+                    self.__motorManager.setAngle(0)
+                    while True:
+                        time.sleep(0.05)
+                        dist = self.__sensorManager.getDistance()
+                        f = dist.front if dist.front is not None else 100.0
+                        if f > OBSTACLE_THRESHOLD:
+                            self.__motorManager.setSpeed(SPEED_CRUISE)
+                            self.__motorManager.setAngle(0)
+                            break
+                elif front <= OBSTACLE_THRESHOLD:
+                    if left >= right:
+                        self.__motorManager.setAngle(-AVOIDANCE_STEERING)
+                    else:
+                        self.__motorManager.setAngle(AVOIDANCE_STEERING)
+                    self.__motorManager.setSpeed(SPEED_MIN)
+                else:
+                    self.__motorManager.setAngle(0)
+                    self.__motorManager.setSpeed(SPEED_CRUISE)
+
+                time.sleep(0.02)
+        except KeyboardInterrupt:
+            self.logger.info("Évitement interrompu")
+        finally:
+            self.stopCar()
+
+    def modeTourner(self):
+        """Conduite continue en suivi de couloir via stayMid(). S'arrête avec Ctrl+C."""
+        self.logger.info("Mode suivi de couloir activé")
+        self.__motorManager.setAngle(0)
+
+        try:
+            while True:
+                speed, steering = self.stayMid()
+                self.__motorManager.setAngle(steering)
+                self.__motorManager.setSpeed(speed)
+
+                if speed == 0 and steering == 0:
+                    while True:
+                        time.sleep(0.05)
+                        dist = self.__sensorManager.getDistance()
+                        f = dist.front if dist.front is not None else 100.0
+                        if f > OBSTACLE_THRESHOLD:
+                            break
+
+                time.sleep(0.02)
+        except KeyboardInterrupt:
+            self.logger.info("Suivi de couloir interrompu")
+        finally:
+            self.stopCar()
+
+    def stayMid(self) -> tuple:
+        """Calcule vitesse et braquage pour rester centré dans le couloir."""
+        dist = self.__sensorManager.getDistance()
+        front = dist.front if dist.front is not None else 100.0
+        left = dist.left if dist.left is not None else 0.0
+        right = dist.right if dist.right is not None else 0.0
+
+        if front <= EMERGENCY_DISTANCE:
+            self.logger.warning(f"stayMid : obstacle à {front} cm — arrêt")
+            return (0, 0)
+
+        steering = self.computeSteering(left, right)
+
+        if front <= OBSTACLE_THRESHOLD:
+            speed = SPEED_MIN
+        else:
+            speed = SPEED_CRUISE
+
+        return (speed, steering)
+
+    def start(self, max_tours: int) -> None:
+        """Lance la course autonome pour un nombre de tours donné."""
+        if not isinstance(max_tours, int) or max_tours < 1:
+            raise ValueError("max_tours doit être un entier >= 1.")
+
+        self.__totalLaps = max_tours
+        self.__tour = -1
+        self.__last_line_state = False
+        self.logger.info(f"=== DÉPART COURSE : {max_tours} tour(s) ===")
+
+        self.__motorManager.setAngle(0)
+
+        try:
+            while True:
+                speed, steering = self.stayMid()
+
+                self.__motorManager.setAngle(steering)
+                self.__motorManager.setSpeed(speed)
+
+                if speed == 0 and steering == 0:
+                    while True:
+                        time.sleep(0.05)
+                        dist = self.__sensorManager.getDistance()
+                        f = dist.front if dist.front is not None else 100.0
+                        if f > OBSTACLE_THRESHOLD:
+                            break
+
+                current_lap = self.lineCount()
+
+                if current_lap >= max_tours:
+                    self.logger.info(
+                        f"=== COURSE TERMINÉE : {max_tours} tour(s) complété(s) ==="
+                    )
+                    break
+
+                time.sleep(0.02)
+
+        except KeyboardInterrupt:
+            self.logger.info("Course interrompue par l'utilisateur")
+        finally:
+            self.stopCar()
