@@ -21,6 +21,14 @@ class Car:
     """
     Classe principale du véhicule autonome.
     Orchestre les managers de capteurs et de moteurs pour piloter la voiture.
+    Attributs:
+        __carName (str): Nom du véhicule.
+        __sensorManager (SensorManager): Gestionnaire des capteurs.
+        __motorManager (MotorManager): Gestionnaire des moteurs.
+        __tour (int): Compteur de tours actuel.
+        __totalLaps (int): Nombre total de tours à effectuer.
+        __lock (RLock): Verrou pour la synchronisation des threads.
+        __last_line_state (bool): Dernier état du capteur de ligne.
     """
 
     def __init__(self, i2c_bus: busio.I2C):
