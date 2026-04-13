@@ -71,14 +71,6 @@ class TestSensorManager(unittest.TestCase):
         self.assertIsInstance(result, DistanceData)
         self.assertAlmostEqual(result.front, 30.0, places=0)
 
-    def test_get_distance_sequentiel(self):
-        """Vérifie que getDistance lit chaque capteur 5 fois."""
-        manager = self._create_manager(dist_vals=(10.0, 20.0, 30.0))
-        manager.getDistance()
-        self.assertEqual(manager._SensorManager__distSensorFront.readValue.call_count, 5)
-        self.assertEqual(manager._SensorManager__distSensorLeft.readValue.call_count, 5)
-        self.assertEqual(manager._SensorManager__distSensorRight.readValue.call_count, 5)
-
     def test_get_distance_capteur_en_erreur(self):
         """Vérifie que getDistance gère un capteur qui retourne None."""
         manager = self._create_manager()

@@ -21,7 +21,6 @@ class Car:
     """
     Classe principale du véhicule autonome.
     Orchestre les managers de capteurs et de moteurs pour piloter la voiture.
-
     Attributs:
         __carName (str): Nom du véhicule.
         __sensorManager (SensorManager): Gestionnaire des capteurs.
@@ -305,8 +304,8 @@ class Car:
         return max(-100, min(100, steering))
 
     def modeEvitement(self):
-        """Conduite continue avec évitement d'obstacles. S'arrête avec Ctrl+C."""
-        self.logger.info("Mode évitement d'obstacles activé")
+        """Suivi de couloir + évitement d'obstacles combinés. S'arrête avec Ctrl+C."""
+        self.logger.info("Mode évitement activé")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(SPEED_CRUISE)
 
@@ -325,47 +324,23 @@ class Car:
                         dist = self.__sensorManager.getDistance()
                         f = dist.front if dist.front is not None else 100.0
                         if f > OBSTACLE_THRESHOLD:
-                            self.__motorManager.setSpeed(SPEED_CRUISE)
-                            self.__motorManager.setAngle(0)
                             break
+
                 elif front <= OBSTACLE_THRESHOLD:
                     if left >= right:
                         self.__motorManager.setAngle(-AVOIDANCE_STEERING)
                     else:
                         self.__motorManager.setAngle(AVOIDANCE_STEERING)
                     self.__motorManager.setSpeed(SPEED_MIN)
+
                 else:
-                    self.__motorManager.setAngle(0)
+                    steering = self.computeSteering(left, right)
+                    self.__motorManager.setAngle(steering)
                     self.__motorManager.setSpeed(SPEED_CRUISE)
 
                 time.sleep(0.02)
         except KeyboardInterrupt:
             self.logger.info("Évitement interrompu")
-        finally:
-            self.stopCar()
-
-    def modeTourner(self):
-        """Conduite continue en suivi de couloir via stayMid(). S'arrête avec Ctrl+C."""
-        self.logger.info("Mode suivi de couloir activé")
-        self.__motorManager.setAngle(0)
-
-        try:
-            while True:
-                speed, steering = self.stayMid()
-                self.__motorManager.setAngle(steering)
-                self.__motorManager.setSpeed(speed)
-
-                if speed == 0 and steering == 0:
-                    while True:
-                        time.sleep(0.05)
-                        dist = self.__sensorManager.getDistance()
-                        f = dist.front if dist.front is not None else 100.0
-                        if f > OBSTACLE_THRESHOLD:
-                            break
-
-                time.sleep(0.02)
-        except KeyboardInterrupt:
-            self.logger.info("Suivi de couloir interrompu")
         finally:
             self.stopCar()
 
