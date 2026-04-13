@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'source'))
 from data.DistanceData import DistanceData
 from data.RGBData import RGBData
 from Car import Car
+from Car import SPEED_MIN
 
 
 class TestCar(unittest.TestCase):
@@ -267,6 +268,10 @@ class TestCar(unittest.TestCase):
         self.assertEqual(self.mock_motor.setSpeed.call_args_list[-1][0][0], 0)
         self.assertEqual(self.mock_motor.setAngle.call_args_list[-1][0][0], 0)
 
+    # ==================================================================
+    # Tests US 11 — stayMid (optimisation trajectoires)
+    # ==================================================================
+
     def test_staymid_retourne_tuple(self):
         """Vérifie que stayMid retourne un tuple (speed, steering)."""
         self.mock_sensor.getDistance.return_value = DistanceData(50.0, 30.0, 30.0)
@@ -329,6 +334,10 @@ class TestCar(unittest.TestCase):
         speed, steering = self.car.stayMid()
         self.assertGreater(speed, 0)
 
+    # ==================================================================
+    # Tests US 12 — start (course avec nombre de tours configurable)
+    # ==================================================================
+
     @patch('Car.time.sleep')
     def test_start_invalide_zero(self, mock_sleep):
         """Vérifie que start lève ValueError si max_tours = 0."""
@@ -350,11 +359,14 @@ class TestCar(unittest.TestCase):
     @patch('Car.time.sleep')
     def test_start_un_tour(self, mock_sleep):
         """Vérifie que start s'arrête après 1 tour."""
+        # stayMid retourne des consignes normales
         self.mock_sensor.getDistance.return_value = DistanceData(60.0, 30.0, 30.0)
+        # Simuler : False, True (départ), False, True (tour 1 terminé)
         self.mock_sensor.detectLine.side_effect = [False, True, False, True]
 
         self.car.start(1)
 
+        # Vérifie que la voiture s'est arrêtée
         self.assertEqual(self.mock_motor.setSpeed.call_args_list[-1][0][0], 0)
         self.assertEqual(self.car._Car__tour, 1)
 
@@ -362,10 +374,11 @@ class TestCar(unittest.TestCase):
     def test_start_deux_tours(self, mock_sleep):
         """Vérifie que start s'arrête après 2 tours."""
         self.mock_sensor.getDistance.return_value = DistanceData(60.0, 30.0, 30.0)
+        # départ + 2 tours = 3 fronts montants
         self.mock_sensor.detectLine.side_effect = [
-            False, True,
-            False, True, 
-            False, True,
+            False, True,   # départ (tour -1 → 0)
+            False, True,   # tour 0 → 1
+            False, True,   # tour 1 → 2
         ]
 
         self.car.start(2)
@@ -375,12 +388,13 @@ class TestCar(unittest.TestCase):
     @patch('Car.time.sleep')
     def test_start_reinitialise_compteur(self, mock_sleep):
         """Vérifie que start remet le compteur de tours à -1 au début."""
-        self.car._Car__tour = 5 
+        self.car._Car__tour = 5  # Valeur résiduelle
         self.mock_sensor.getDistance.return_value = DistanceData(60.0, 30.0, 30.0)
         self.mock_sensor.detectLine.side_effect = [False, True, False, True]
 
         self.car.start(1)
 
+        # Après 1 tour, tour doit être 1 (pas 6)
         self.assertEqual(self.car._Car__tour, 1)
 
     @patch('Car.time.sleep')
@@ -401,6 +415,7 @@ class TestCar(unittest.TestCase):
 
         self.car.start(1)
 
+        # stopCar met speed et angle à 0
         self.mock_motor.setSpeed.assert_called_with(0)
         self.mock_motor.setAngle.assert_called_with(0)
 
@@ -426,25 +441,29 @@ class TestCar(unittest.TestCase):
             msgs = [c[0][0] for c in mock_log.call_args_list]
             self.assertTrue(any("TERMINÉE" in m for m in msgs))
 
+    # ==================================================================
+    # Tests modeEvitement (suivi couloir + évitement)
+    # ==================================================================
+
     @patch('Car.time.sleep')
-    def test_mode_evitement_roule_droit_si_libre(self, mock_sleep):
-        """Vérifie que modeEvitement roule tout droit si voie libre."""
+    def test_mode_evitement_suit_couloir_si_libre(self, mock_sleep):
+        """Vérifie que modeEvitement reste centré quand voie libre."""
         call_count = [0]
         def fake_distance():
             call_count[0] += 1
             if call_count[0] >= 3:
                 raise KeyboardInterrupt
-            return DistanceData(80.0, 40.0, 40.0)
+            return DistanceData(80.0, 20.0, 40.0)
         self.mock_sensor.getDistance.side_effect = fake_distance
 
         self.car.modeEvitement()
 
         angles = [c[0][0] for c in self.mock_motor.setAngle.call_args_list]
-        self.assertTrue(any(a == 0 for a in angles))
+        self.assertTrue(any(a > 0 for a in angles))
 
     @patch('Car.time.sleep')
     def test_mode_evitement_braque_si_obstacle(self, mock_sleep):
-        """Vérifie que modeEvitement braque quand obstacle proche."""
+        """Vérifie que modeEvitement braque fort quand obstacle proche."""
         call_count = [0]
         def fake_distance():
             call_count[0] += 1
@@ -459,33 +478,26 @@ class TestCar(unittest.TestCase):
         self.assertTrue(any(a != 0 for a in angles))
 
     @patch('Car.time.sleep')
-    def test_mode_evitement_stop_a_la_fin(self, mock_sleep):
-        """Vérifie que modeEvitement appelle stopCar en sortie."""
-        self.mock_sensor.getDistance.side_effect = KeyboardInterrupt
-        self.car.modeEvitement()
-        self.mock_motor.setSpeed.assert_called_with(0)
-
-    @patch('Car.time.sleep')
-    def test_mode_tourner_utilise_staymid(self, mock_sleep):
-        """Vérifie que modeTourner applique stayMid."""
+    def test_mode_evitement_ralentit_si_obstacle(self, mock_sleep):
+        """Vérifie que modeEvitement ralentit quand obstacle proche."""
         call_count = [0]
         def fake_distance():
             call_count[0] += 1
             if call_count[0] >= 3:
                 raise KeyboardInterrupt
-            return DistanceData(60.0, 20.0, 40.0)
+            return DistanceData(20.0, 50.0, 10.0)
         self.mock_sensor.getDistance.side_effect = fake_distance
 
-        self.car.modeTourner()
+        self.car.modeEvitement()
 
-        angles = [c[0][0] for c in self.mock_motor.setAngle.call_args_list]
-        self.assertTrue(any(a > 0 for a in angles))
+        vitesses = [c[0][0] for c in self.mock_motor.setSpeed.call_args_list]
+        self.assertTrue(any(v == SPEED_MIN for v in vitesses))
 
     @patch('Car.time.sleep')
-    def test_mode_tourner_stop_a_la_fin(self, mock_sleep):
-        """Vérifie que modeTourner appelle stopCar en sortie."""
+    def test_mode_evitement_stop_a_la_fin(self, mock_sleep):
+        """Vérifie que modeEvitement appelle stopCar en sortie."""
         self.mock_sensor.getDistance.side_effect = KeyboardInterrupt
-        self.car.modeTourner()
+        self.car.modeEvitement()
         self.mock_motor.setSpeed.assert_called_with(0)
 
 if __name__ == '__main__':

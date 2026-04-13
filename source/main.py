@@ -9,15 +9,13 @@ def afficher_menu():
     print("\n" + "=" * 50)
     print("        MENU PRINCIPAL — VOITURE AUTONOME")
     print("=" * 50)
-    print("  [1]  Diagnostic complet")
+    print("  [1]  Diagnostic complet (moteur + capteur)")
     print("  [2]  Démarrage progressif (avant + arrière)")
     print("  [3]  Demi-tour")
     print("  [4]  Figure en 8")
-    print("  [5]  Évitement obstacle (conduite continue)")
-    print("  [6]  Suivi de couloir (tourner)")
-    print("  [7]  Test infrarouge (arrêt sur ligne noire)")
-    print("  [8]  Course autonome (nombre de tours)")
-    print("  [9]  Course autonome (départ au feu vert)")
+    print("  [5]  Mode évitement")
+    print("  [6]  Test infrarouge (arrêt sur ligne noire)")
+    print("  [7]  Course autonome (nombre de tours)")
     print("  [0]  Quitter")
     print("=" * 50)
 
@@ -47,19 +45,15 @@ def main():
                 print("\n--- Figure en 8 ---")
                 car.figureEight()
             elif choix == "5":
-                print("\n--- Évitement obstacle ---")
+                print("\n--- Mode evitement ---")
                 print("(Ctrl+C pour arrêter)")
                 car.modeEvitement()
             elif choix == "6":
-                print("\n--- Suivi de couloir ---")
-                print("(Ctrl+C pour arrêter)")
-                car.modeTourner()
-            elif choix == "7":
                 print("\n--- Test infrarouge ---")
                 print("La voiture roule 5s max ou s'arrête sur ligne noire.")
                 detected = car.testLineSensor()
                 print("LIGNE DÉTECTÉE !" if detected else "Pas de ligne (timeout).")
-            elif choix == "8":
+            elif choix == "7":
                 print("\n--- Course autonome ---")
                 try:
                     nb = int(input("Nombre de tours à effectuer : ").strip())
@@ -71,7 +65,7 @@ def main():
                         car.start(nb)
                 except ValueError:
                     print("Veuillez entrer un nombre entier valide.")
-            elif choix == "9":
+            elif choix == "0":
                 print("Arrêt du programme.")
                 break
             else:
@@ -86,4 +80,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
