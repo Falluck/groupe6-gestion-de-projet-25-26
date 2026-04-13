@@ -1,136 +1,25 @@
 import time
-import threading
-import threading
 import busio
 import board
 import RPi.GPIO as GPIO
-from Car import Car, SPEED_MIN, SPEED_CRUISE, EMERGENCY_DISTANCE, OBSTACLE_THRESHOLD, AVOIDANCE_STEERING
-from Car import Car, SPEED_MIN, SPEED_CRUISE, EMERGENCY_DISTANCE, OBSTACLE_THRESHOLD, AVOIDANCE_STEERING
+from Car import Car
 
 
 def afficher_menu():
     print("\n" + "=" * 50)
     print("        MENU PRINCIPAL — VOITURE AUTONOME")
     print("=" * 50)
-    print("  [1]  Diagnostic moteurs")
-    print("  [2]  Diagnostic capteurs")
-    print("  [3]  Diagnostic complet")
-    print("  [4]  Démarrage progressif (avant + arrière)")
-    print("  [5]  Demi-tour")
-    print("  [6]  Figure en 8")
-    print("  [7]  Évitement obstacle (conduite continue)")
-    print("  [8]  Suivi de couloir (tourner)")
-    print("  [9]  Test infrarouge (arrêt sur ligne noire)")
+    print("  [1]  Diagnostic complet")
+    print("  [2]  Démarrage progressif (avant + arrière)")
+    print("  [3]  Demi-tour")
+    print("  [4]  Figure en 8")
+    print("  [5]  Évitement obstacle (conduite continue)")
+    print("  [6]  Suivi de couloir (tourner)")
+    print("  [7]  Test infrarouge (arrêt sur ligne noire)")
+    print("  [8]  Course autonome (nombre de tours)")
+    print("  [9]  Course autonome (départ au feu vert)")
     print("  [0]  Quitter")
     print("=" * 50)
-
-
-class SensorReader:
-    def __init__(self, car):
-        self.car = car
-        self.front = 100.0
-        self.left = 0.0
-        self.right = 0.0
-        self.lock = threading.Lock()
-        self.running = False
-        self.thread = None
-
-    def start(self):
-        self.running = True
-        self.thread = threading.Thread(target=self._loop, daemon=True)
-        self.thread.start()
-
-    def stop(self):
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=1.0)
-
-    def get(self):
-        with self.lock:
-            return self.front, self.left, self.right
-
-    def _loop(self):
-        while self.running:
-            dist = self.car.getDistanceReadings()
-            with self.lock:
-                self.front = dist.front if dist.front is not None else 100.0
-                self.left = dist.left if dist.left is not None else 0.0
-                self.right = dist.right if dist.right is not None else 0.0
-
-
-def mode_evitement_continu(car):
-    print("La voiture roule et esquive les obstacles.")
-    print("(Ctrl+C pour arrêter)")
-    reader = SensorReader(car)
-    reader.start()
-    car.setAngle(0)
-    car.setSpeed(SPEED_CRUISE)
-    try:
-        while True:
-            f, l, r = reader.get()
-            if f <= EMERGENCY_DISTANCE:
-                car.setSpeed(0)
-                car.setAngle(0)
-                while True:
-                    time.sleep(0.05)
-                    f, _, _ = reader.get()
-                    if f > OBSTACLE_THRESHOLD:
-                        car.setSpeed(SPEED_CRUISE)
-                        car.setAngle(0)
-                        break
-            elif f <= OBSTACLE_THRESHOLD:
-                if l >= r:
-                    car.setAngle(-AVOIDANCE_STEERING)
-                else:
-                    car.setAngle(AVOIDANCE_STEERING)
-                car.setSpeed(SPEED_MIN)
-            else:
-                car.setAngle(0)
-                car.setSpeed(SPEED_CRUISE)
-            time.sleep(0.02)
-    except KeyboardInterrupt:
-        print("\nArrêt de l'évitement.")
-    finally:
-        reader.stop()
-        car.stopCar()
-
-
-def mode_tourner(car):
-    print("La voiture roule et suit le couloir.")
-    print("(Ctrl+C pour arrêter)")
-    reader = SensorReader(car)
-    reader.start()
-    car.setAngle(0)
-    car.setSpeed(SPEED_CRUISE)
-    try:
-        while True:
-            f, l, r = reader.get()
-            if f <= EMERGENCY_DISTANCE:
-                car.setSpeed(0)
-                car.setAngle(0)
-                while True:
-                    time.sleep(0.05)
-                    f, _, _ = reader.get()
-                    if f > OBSTACLE_THRESHOLD:
-                        break
-                car.setSpeed(SPEED_CRUISE)
-                car.setAngle(0)
-                continue
-            steering = car.computeSteering(l, r)
-            car.setAngle(steering)
-            if f <= OBSTACLE_THRESHOLD:
-                car.setSpeed(SPEED_MIN)
-            else:
-                penalty = abs(steering) / 100.0
-                speed = int(SPEED_CRUISE * (1.0 - 0.4 * penalty))
-                speed = max(SPEED_MIN, speed)
-                car.setSpeed(speed)
-            time.sleep(0.02)
-    except KeyboardInterrupt:
-        print("\nArrêt du suivi.")
-    finally:
-        reader.stop()
-        car.stopCar()
 
 
 def main():
@@ -143,40 +32,46 @@ def main():
             afficher_menu()
             choix = input("Choix : ").strip()
             if choix == "1":
-                print("\n--- Diagnostic moteurs ---")
-                car.prepareMotors()
-            elif choix == "2":
-                print("\n--- Diagnostic capteurs ---")
-                all_ok = car.prepareSensors()
-                print("Tous les capteurs OK." if all_ok else "Certains capteurs en échec.")
-            elif choix == "3":
                 print("\n--- Diagnostic complet ---")
                 car.prepareMotors()
                 time.sleep(1)
                 all_ok = car.prepareSensors()
                 print("Tout est OK." if all_ok else "Certains capteurs en échec.")
-            elif choix == "4":
+            elif choix == "2":
                 print("\n--- Démarrage progressif ---")
                 car.startCar()
-            elif choix == "5":
+            elif choix == "3":
                 print("\n--- Demi-tour ---")
                 car.uTurn()
-            elif choix == "6":
+            elif choix == "4":
                 print("\n--- Figure en 8 ---")
                 car.figureEight()
-            elif choix == "7":
+            elif choix == "5":
                 print("\n--- Évitement obstacle ---")
-                mode_evitement_continu(car)
-                mode_evitement_continu(car)
-            elif choix == "8":
+                print("(Ctrl+C pour arrêter)")
+                car.modeEvitement()
+            elif choix == "6":
                 print("\n--- Suivi de couloir ---")
-                mode_tourner(car)
-            elif choix == "9":
+                print("(Ctrl+C pour arrêter)")
+                car.modeTourner()
+            elif choix == "7":
                 print("\n--- Test infrarouge ---")
                 print("La voiture roule 5s max ou s'arrête sur ligne noire.")
                 detected = car.testLineSensor()
                 print("LIGNE DÉTECTÉE !" if detected else "Pas de ligne (timeout).")
-            elif choix == "0":
+            elif choix == "8":
+                print("\n--- Course autonome ---")
+                try:
+                    nb = int(input("Nombre de tours à effectuer : ").strip())
+                    if nb < 1:
+                        print("Le nombre de tours doit être >= 1.")
+                    else:
+                        print(f"Lancement de la course : {nb} tour(s)")
+                        print("(Ctrl+C pour arrêter)")
+                        car.start(nb)
+                except ValueError:
+                    print("Veuillez entrer un nombre entier valide.")
+            elif choix == "9":
                 print("Arrêt du programme.")
                 break
             else:
