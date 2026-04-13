@@ -40,9 +40,9 @@ class LineSensor(Sensor):
         while True:
             result = GPIO.input(self.__pinGPIO)
             if result == 0:
-                return True
-            elif result == 1:
                 return False
+            elif result == 1:
+                return True
 
             if time.time() - start_time > timeout:
                 raise TimeoutError("Timeout en attente d'une valeur GPIO valide")
