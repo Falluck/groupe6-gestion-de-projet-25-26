@@ -12,23 +12,15 @@ OBSTACLE_THRESHOLD = 30
 SAFE_DISTANCE = 45
 AVOIDANCE_STEERING = 70
 EMERGENCY_DISTANCE = 8
-SPEED_MAX = 40
-SPEED_MIN = 15
-SPEED_CRUISE = 25
+SPEED_MAX = -60
+SPEED_MIN = -60
+SPEED_CRUISE = -60
 
 
 class Car:
     """
     Classe principale du véhicule autonome.
     Orchestre les managers de capteurs et de moteurs pour piloter la voiture.
-    Attributs:
-        __carName (str): Nom du véhicule.
-        __sensorManager (SensorManager): Gestionnaire des capteurs.
-        __motorManager (MotorManager): Gestionnaire des moteurs.
-        __tour (int): Compteur de tours actuel.
-        __totalLaps (int): Nombre total de tours à effectuer.
-        __lock (RLock): Verrou pour la synchronisation des threads.
-        __last_line_state (bool): Dernier état du capteur de ligne.
     """
 
     def __init__(self, i2c_bus: busio.I2C):
@@ -304,7 +296,7 @@ class Car:
         return max(-100, min(100, steering))
 
     def modeEvitement(self):
-        """Suivi de couloir + évitement d'obstacles combinés. S'arrête avec Ctrl+C."""
+        """Conduite continue avec évitement d'obstacles. S'arrête avec Ctrl+C."""
         self.logger.info("Mode évitement activé")
         self.__motorManager.setAngle(0)
         self.__motorManager.setSpeed(SPEED_CRUISE)
@@ -324,23 +316,60 @@ class Car:
                         dist = self.__sensorManager.getDistance()
                         f = dist.front if dist.front is not None else 100.0
                         if f > OBSTACLE_THRESHOLD:
+                            self.__motorManager.setSpeed(SPEED_CRUISE)
+                            self.__motorManager.setAngle(0)
                             break
-
                 elif front <= OBSTACLE_THRESHOLD:
                     if left >= right:
                         self.__motorManager.setAngle(-AVOIDANCE_STEERING)
                     else:
                         self.__motorManager.setAngle(AVOIDANCE_STEERING)
                     self.__motorManager.setSpeed(SPEED_MIN)
-
                 else:
-                    steering = self.computeSteering(left, right)
-                    self.__motorManager.setAngle(steering)
+                    self.__motorManager.setAngle(0)
                     self.__motorManager.setSpeed(SPEED_CRUISE)
 
                 time.sleep(0.02)
         except KeyboardInterrupt:
             self.logger.info("Évitement interrompu")
+        finally:
+            self.stopCar()
+
+    def modeTourner(self):
+        """Suivi de couloir via stayMid(). S'arrête avec Ctrl+C."""
+        self.logger.info("Mode suivi de couloir activé")
+        self.__motorManager.setAngle(0)
+        stuck_since = None
+
+        try:
+            while True:
+                speed, steering = self.stayMid()
+                self.__motorManager.setAngle(steering)
+                self.__motorManager.setSpeed(speed)
+
+                if speed == 0 and steering == 0:
+                    if stuck_since is None:
+                        stuck_since = time.monotonic()
+
+                    if time.monotonic() - stuck_since >= 3.0:
+                        self.logger.warning("Voiture coincée — manœuvre de dégagement")
+                        self.__motorManager.setAngle(0)
+                        self.__motorManager.setSpeed(-SPEED_MIN)
+                        time.sleep(1.0)
+
+                        self.__motorManager.setAngle(90)
+                        self.__motorManager.setSpeed(SPEED_CRUISE)
+                        time.sleep(1.0)
+
+                        self.__motorManager.setAngle(0)
+                        stuck_since = None
+                        self.logger.info("Dégagement terminé")
+                else:
+                    stuck_since = None
+
+                time.sleep(0.02)
+        except KeyboardInterrupt:
+            self.logger.info("Suivi de couloir interrompu")
         finally:
             self.stopCar()
 
