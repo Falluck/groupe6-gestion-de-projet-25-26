@@ -1,6 +1,6 @@
-# Groupe 6 — Voiture Autonome F1
+# Groupe 6 — Voiture Autonome
 
-Projet développé en Python 3 sur Raspberry Pi 3B dans le cadre du cours de Gestion de Projet à la HEH Mons 2025-2026. L'objectif est de construire un module mobile capable de réaliser une course sur un circuit défini par les enseignants.
+Projet développé en Python 3 sur Raspberry Pi 3B+ dans le cadre du cours de Gestion de Projet à la HEH Mons 2025-2026. L'objectif est de construire un module mobile capable de réaliser une course sur un circuit défini.
 
 ## Équipe
 
